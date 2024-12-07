@@ -2,9 +2,11 @@
 defmodule ExamplePhoenix.Chat do
   import Ecto.Query, warn: false
   alias ExamplePhoenix.Repo
-  alias ExamplePhoenix.Chat.{Room, RoomRateLimit}
-  alias ExamplePhoenix.Chat.{Room, Message}
-  alias ExamplePhoenix.Chat.RoomRateLimit
+  alias ExamplePhoenix.Chat.{Room, Message, RoomRateLimit}
+
+  # กำหนดค่า rate limit
+  @max_rooms_per_hour 5
+  @block_duration_hours 24
 
   def list_rooms do
     Repo.all(Room)
@@ -22,9 +24,96 @@ defmodule ExamplePhoenix.Chat do
   end
 
   def create_room(attrs \\ %{}) do
-    %Room{}
-    |> Room.changeset(attrs)
-    |> Repo.insert()
+    user_id = attrs["creator_id"]
+
+    case check_rate_limit(user_id) do
+      {:ok, _} ->
+        # สร้างห้องตามปกติ
+        %Room{}
+        |> Room.changeset(attrs)
+        |> Repo.insert()
+        |> case do
+          {:ok, _room} = result ->
+            increment_attempt(user_id)
+            result
+          error ->
+            error
+        end
+
+      {:error, :rate_limited} ->
+        {:error, :rate_limited}
+    end
+  end
+
+  defp check_rate_limit(user_id) do
+    now = NaiveDateTime.local_now()
+    one_hour_ago = NaiveDateTime.add(now, -1 * 3600, :second)
+    block_expires_at = NaiveDateTime.add(now, -1 * @block_duration_hours * 3600, :second)
+
+    rate_limit = Repo.get_by(RoomRateLimit, user_id: user_id)
+
+    cond do
+      is_nil(rate_limit) ->
+        {:ok, create_rate_limit(user_id)}
+
+      rate_limit.last_attempt_at < block_expires_at ->
+        # รีเซ็��หลังจากพ้นระยะเวลาบล็อก
+        {:ok, reset_rate_limit(rate_limit)}
+
+      rate_limit.last_attempt_at < one_hour_ago ->
+        # รีเซ็ตหลังจากพ้น 1 ชั่วโมง
+        {:ok, reset_rate_limit(rate_limit)}
+
+      rate_limit.attempt_count >= @max_rooms_per_hour ->
+        {:error, :rate_limited}
+
+      true ->
+        {:ok, rate_limit}
+    end
+  end
+
+  defp create_rate_limit(user_id) do
+    %RoomRateLimit{}
+    |> RoomRateLimit.changeset(%{
+      user_id: user_id,
+      attempt_count: 0,
+      last_attempt_at: NaiveDateTime.local_now()
+    })
+    |> Repo.insert!()
+  end
+
+  defp reset_rate_limit(rate_limit) do
+    rate_limit
+    |> RoomRateLimit.changeset(%{
+      attempt_count: 0,
+      last_attempt_at: NaiveDateTime.local_now()
+    })
+    |> Repo.update!()
+  end
+
+  defp increment_attempt(user_id) do
+    from(r in RoomRateLimit, where: r.user_id == ^user_id)
+    |> Repo.update_all(
+      inc: [attempt_count: 1],
+      set: [last_attempt_at: NaiveDateTime.local_now()]
+    )
+  end
+
+  def get_remaining_time_for_block(user_id) do
+    case Repo.get_by(RoomRateLimit, user_id: user_id) do
+      nil ->
+        0
+
+      rate_limit ->
+        now = NaiveDateTime.local_now()
+        block_expires_at = NaiveDateTime.add(rate_limit.last_attempt_at, @block_duration_hours * 3600, :second)
+
+        if NaiveDateTime.compare(block_expires_at, now) == :gt do
+          NaiveDateTime.diff(block_expires_at, now, :second)
+        else
+          0
+        end
+    end
   end
 
   def list_messages(room_id, limit \\ 100) do
@@ -40,7 +129,7 @@ defmodule ExamplePhoenix.Chat do
     |> Message.changeset(attrs)
     |> Repo.insert() do
       {:ok, message} = result ->
-        # Broadcast ข้อความใหม่ไปยังทุกคนในห้อง
+        # Broadcast ข้อความใหม่ไปยังทุคนในห้อง
         Phoenix.PubSub.broadcast(
           ExamplePhoenix.PubSub,
           "room:#{message.room_id}",

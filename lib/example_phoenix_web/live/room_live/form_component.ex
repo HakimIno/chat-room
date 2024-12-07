@@ -162,6 +162,15 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
         send(self(), {:close_modal, :created})
         {:noreply, socket}
 
+      {:error, :rate_limited} ->
+        remaining_time = Chat.get_remaining_time_for_block(socket.assigns.current_user)
+        hours = div(remaining_time, 3600)
+        minutes = div(rem(remaining_time, 3600), 60)
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "คุณสร้างห้องมากเกินไป กรุณารอ #{hours} ชั่วโมง #{minutes} นาที")}
+
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
     end

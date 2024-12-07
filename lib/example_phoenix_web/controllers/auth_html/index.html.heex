@@ -1,20 +1,67 @@
-<div class="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
-  <h1 class="text-2xl font-bold mb-6 text-center">Enter Chat Room</h1>
-  
-  <.form for={%{}} action={~p"/auth"} method="post">
-    <div class="mb-4">
-      <label class="block text-gray-700 text-sm font-bold mb-2" for="user_name">
-        Your Name
-      </label>
-      <input type="text" 
-             name="user[name]" 
-             id="user_name"
-             required 
-             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-             placeholder="Enter your name">
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+  <!-- Decorative SVG Background -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
+    <svg class="absolute right-0 top-0 w-96 h-96 text-blue-500" fill="currentColor" viewBox="0 0 200 200">
+      <path d="M44.5,-76.3C59.1,-69.9,73.3,-60.1,79.9,-46.3C86.5,-32.5,85.5,-14.7,83.2,2.3C80.9,19.3,77.4,35.5,68.6,47.9C59.8,60.3,45.8,68.9,31.1,73.4C16.4,77.9,1,78.4,-14.7,76.5C-30.4,74.6,-46.5,70.3,-58.2,60.7C-69.9,51.1,-77.3,36.1,-80.9,20.3C-84.5,4.5,-84.3,-12.1,-79.1,-26.5C-73.9,-40.9,-63.7,-53,-50.8,-60.4C-37.9,-67.8,-22.2,-70.5,-6.6,-70.5C9,-70.5,29.9,-82.7,44.5,-76.3Z" transform="translate(100 100)" />
+    </svg>
+    <svg class="absolute left-0 bottom-0 w-96 h-96 text-indigo-500" fill="currentColor" viewBox="0 0 200 200">
+      <path d="M38.5,-64.3C51,-56.7,63.3,-48.1,71.8,-36.1C80.2,-24.1,84.9,-8.7,83.2,6.2C81.6,21.1,73.6,35.5,63.7,47.7C53.8,59.9,41.9,69.9,28.1,74.8C14.3,79.7,-1.4,79.5,-16.1,75.2C-30.8,71,-44.4,62.7,-55.2,51.5C-65.9,40.3,-73.8,26.2,-77.2,10.8C-80.6,-4.6,-79.5,-21.4,-72.3,-34.9C-65.1,-48.4,-51.8,-58.6,-37.8,-65.3C-23.8,-72,-11.9,-75.2,0.8,-76.5C13.5,-77.8,26.9,-71.9,38.5,-64.3Z" transform="translate(100 100)" />
+    </svg>
+  </div>
+
+  <div class="w-full max-w-md relative">
+    <!-- Chat Icon -->
+    <div class="absolute -top-20 left-1/2 transform -translate-x-1/2">
+      <div class="bg-white rounded-full p-4 shadow-xl">
+        <svg class="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </div>
     </div>
-    <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600">
-      Enter Chat
-    </button>
-  </.form>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-2xl shadow-xl p-8 backdrop-blur-lg bg-opacity-90">
+      <h1 class="text-3xl font-bold mb-8 text-center text-gray-800">
+        Welcome to Chat
+      </h1>
+      
+      <.form for={%{}} action={~p"/auth"} method="post" class="space-y-6">
+        <div>
+          <label class="block text-gray-700 font-medium mb-2" for="user_name">
+            Your Name
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <input
+              type="text" 
+              name="user[name]" 
+              id="user_name"
+              required 
+              class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
+              placeholder="Enter your name"
+            />
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition duration-200 ease-in-out hover:scale-[1.02]">
+          Join Chat Room
+          <svg class="w-5 h-5 inline-block ml-2 -mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </button>
+      </.form>
+
+      <!-- Decorative Elements -->
+      <div class="mt-8 text-center text-sm text-gray-500">
+        <div class="flex items-center justify-center space-x-2">
+          <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+          <span>Ready to connect</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

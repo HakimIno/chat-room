@@ -101,7 +101,8 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
           {:noreply,
            socket
            |> stream_insert(:messages, new_message, at: -1)
-           |> assign(:current_message, "")}
+           |> assign(:current_message, "")
+           |> assign(:show_emoji_modal, false)}
 
         {:error, _changeset} ->
           {:noreply,
@@ -117,19 +118,21 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   end
 
   @impl true
-  def handle_event("show_emoji_modal", _params, socket) do
+  def handle_event("open_emoji", _params, socket) do
     {:noreply, assign(socket, :show_emoji_modal, true)}
   end
 
   @impl true
-  def handle_event("close_emoji_modal", _params, socket) do
+  def handle_event("close_emoji", _params, socket) do
     {:noreply, assign(socket, :show_emoji_modal, false)}
   end
 
   @impl true
   def handle_event("select_emoji", %{"emoji" => emoji}, socket) do
     current_message = socket.assigns.current_message || ""
-    {:noreply, assign(socket, :current_message, current_message <> emoji)}
+    {:noreply,
+     socket
+     |> assign(:current_message, current_message <> emoji)}
   end
 
   @impl true
@@ -150,25 +153,6 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
      socket
      |> assign(:blocked, blocked)
      |> assign(:block_remaining_seconds, remaining_seconds)}
-  end
-
-  @impl true
-  def handle_event("open_emoji", _params, socket) do
-    {:noreply, assign(socket, :show_emoji_picker, true)}
-  end
-
-  @impl true
-  def handle_event("close_emoji", _params, socket) do
-    {:noreply, assign(socket, :show_emoji_picker, false)}
-  end
-
-  @impl true
-  def handle_event("select_emoji", %{"emoji" => emoji}, socket) do
-    current_message = socket.assigns.current_message || ""
-    {:noreply,
-     socket
-     |> assign(:current_message, current_message <> emoji)
-     |> assign(:show_emoji_modal, false)}  # ปิด modal หลังจากเลือก emoji
   end
 
   defp handle_send_message(socket) do

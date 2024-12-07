@@ -5,12 +5,9 @@ defmodule ExamplePhoenix.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      ExamplePhoenixWeb.Telemetry,  # แก้การสะกดผิด
       ExamplePhoenix.Repo,
-      {DNSCluster, query: Application.get_env(:example_phoenix, :dns_cluster_query) || :ignore},
+      ExamplePhoenixWeb.Telemetry,
       {Phoenix.PubSub, name: ExamplePhoenix.PubSub},
-      ExamplePhoenix.Presence,
-      ExamplePhoenix.Chat.RoomRateLimit,
       ExamplePhoenixWeb.Endpoint
     ]
 
