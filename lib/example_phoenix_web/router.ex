@@ -17,7 +17,7 @@ defmodule ExamplePhoenixWeb.Router do
   scope "/", ExamplePhoenixWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    get "/", ChatController, :redirect_to_chat
     get "/auth", AuthController, :index
     post "/auth", AuthController, :create
     delete "/auth/logout", AuthController, :delete
