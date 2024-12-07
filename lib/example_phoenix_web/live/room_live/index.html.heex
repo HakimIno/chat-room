@@ -1,0 +1,173 @@
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
+  <div class="max-w-5xl mx-auto px-4">
+    <!-- Header Section -->
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">ห้องสนทนา</h1>
+      <p class="text-gray-600">สวัสดี, <span class="text-blue-600 font-medium"><%= @current_user %></span></p>
+    </div>
+
+    <!-- Create Room Button -->
+    <div class="flex justify-center mb-8">
+      <button 
+        phx-click="show_modal"
+        class="group relative inline-flex items-center gap-2 px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-xl"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+        </svg>
+        สร้างห้องใหม่
+      </button>
+    </div>
+
+    <!-- Room Grid -->
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <%= for room <- @rooms do %>
+        <div class="group bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
+          <!-- Room Header -->
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 mb-1">
+                <%= room.name %>
+              </h3>
+              <p class="text-sm text-gray-500 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                </svg>
+                <%= Calendar.strftime(room.inserted_at, "%d/%m/%Y %H:%M") %>
+              </p>
+            </div>
+
+            <!-- Room Type Badge -->
+            <%= if room.is_private do %>
+              <span class="px-3 py-1 text-xs font-semibold bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-full shadow-sm">
+                ห้องส่วนตัว
+              </span>
+            <% else %>
+              <span class="px-3 py-1 text-xs font-semibold bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full shadow-sm">
+                ห้องสาธารณะ
+              </span>
+            <% end %>
+          </div>
+
+          <!-- Room Info -->
+          <div class="flex items-center gap-2 mb-4">
+            <div class="flex items-center gap-1 text-sm text-gray-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+              </svg>
+              <span><%= length(room.last_active_users || []) %> คนออนไลน์</span>
+            </div>
+            <%= if room.creator_id do %>
+              <div class="text-sm text-gray-500">
+                สร้างโดย: <span class="font-medium"><%= room.creator_id %></span>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Join Room Button -->
+          <div class="mt-4">
+            <%= if room.is_private do %>
+              <!-- Private Room Join Button -->
+              <button
+                phx-click="show_password_modal"
+                phx-value-room-id={room.id}
+                class="w-full inline-flex justify-center items-center px-4 py-2.5 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                </svg>
+                เข้าร่วมห้องส่วนตัว
+              </button>
+            <% else %>
+              <!-- Public Room Join Button -->
+              <.link
+                navigate={~p"/chat/#{room.id}"}
+                class="w-full inline-flex justify-center items-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+                เข้าร่วมห้อง
+              </.link>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Room Creation Modal -->
+  <%= if @show_room_modal do %>
+    <.live_component
+      module={ExamplePhoenixWeb.ChatLive.FormComponent}
+      id="new-room"
+      title="สร้างห้องใหม่"
+      action={:new}
+      room={@room}
+      current_user={@current_user}
+      patch={~p"/"}
+    />
+  <% end %>
+
+  <!-- Password Modal -->
+  <%= if @show_password_modal do %>
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50">
+      <div class="fixed inset-0 z-20 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+          <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all p-6">
+            <div class="absolute right-4 top-4">
+              <button 
+                phx-click="close_password_modal"
+                class="text-gray-400 hover:text-gray-500 transition-colors"
+              >
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">ใส่รหัสผ่านเพื่อเข้าห้อง</h3>
+
+            <form phx-submit="join_private_room" class="space-y-4">
+              <input type="hidden" name="id" value={@selected_room_id}>
+              <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
+                <div class="mt-1 relative">
+                  <input
+                    type="password"
+                    name="password"
+                    id="password"
+                    required
+                    class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    placeholder="ใส่รหัสผ่าน"
+                  />
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-3">
+                <button
+                  type="button"
+                  phx-click="close_password_modal"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700"
+                >
+                  เข้าร่วม
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
