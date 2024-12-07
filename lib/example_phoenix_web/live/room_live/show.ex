@@ -1,7 +1,7 @@
 # lib/example_phoenix_web/live/room_live/show.ex
 defmodule ExamplePhoenixWeb.ChatLive.Show do
   use ExamplePhoenixWeb, :live_view
-  alias ExamplePhoenix.{Chat, Accounts.RateLimit}
+  alias ExamplePhoenix.Chat
   import Phoenix.Component
   import Phoenix.HTML.Link  # This adds the link/2 function
 
@@ -25,16 +25,16 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   ]
 
   @impl true
-  def mount(%{"id" => room_id}, session, socket) do
-    case Chat.get_room!(room_id) do
-      %Chat.Room{} = room ->
+  def mount(%{"id" => id}, session, socket) do
+    case Chat.get_room(id) do
+      {:ok, room} ->
         if connected?(socket) do
-          Phoenix.PubSub.subscribe(ExamplePhoenix.PubSub, "room:#{room_id}")
+          Phoenix.PubSub.subscribe(ExamplePhoenix.PubSub, "room:#{id}")
         end
 
         # โหลดข้อความเก่าและเรียงตาม inserted_at
         messages =
-          room_id
+          id
           |> Chat.list_messages()
           |> Enum.sort_by(&(&1.inserted_at), :asc)
 
@@ -53,6 +53,12 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
          |> assign(:client_ip, client_ip)
          |> assign(:emojis, @emojis)
          |> stream(:messages, messages)}
+
+      {:error, :not_found} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "ไม่พบห้องที่ต้องการ")
+         |> push_navigate(to: ~p"/")}
     end
   end
 
@@ -148,12 +154,12 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
 
   @impl true
   def handle_event("open_emoji", _params, socket) do
-    {:noreply, assign(socket, :show_emoji_modal, true)}
+    {:noreply, assign(socket, :show_emoji_picker, true)}
   end
 
   @impl true
   def handle_event("close_emoji", _params, socket) do
-    {:noreply, assign(socket, :show_emoji_modal, false)}
+    {:noreply, assign(socket, :show_emoji_picker, false)}
   end
 
   @impl true
@@ -206,7 +212,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
         IO.puts("Using X-Forwarded-For: #{x_forwarded_for}")
         x_forwarded_for
 
-      # ถ้าไม่มี x-forwarded-for ให้ใช้ x-real-ip
+      # ้าไม่มี x-forwarded-for ให้ใช้ x-real-ip
       x_real_ip = get_real_ip(connect_info) ->
         IO.puts("Using X-Real-IP: #{x_real_ip}")
         x_real_ip
@@ -226,7 +232,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
         "unknown"
     end
 
-    # ตรวจสอบว่า IP ที่ได้ไม่ช่ค่ว่างหรือ nil
+    # ตรวจสอบว่า IP ที่ไดไม่ช่ค่ว่างหรือ nil
     case ip do
       nil -> "unknown"
       "" -> "unknown"
@@ -262,19 +268,6 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     end
   end
   defp get_real_ip(_), do: nil
-
-  defp send_message(socket, message) do
-    case Chat.create_message(%{
-      content: message,
-      user_name: socket.assigns.current_user,
-      room_id: socket.assigns.room.id
-    }) do
-      {:ok, _message} ->
-        {:noreply, assign(socket, :current_message, "")}
-      {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "ไม่สามารถส่งข้อความได้")}
-    end
-  end
 
   defp format_message_time(datetime) do
     Calendar.strftime(datetime, "%H:%M")

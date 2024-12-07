@@ -59,9 +59,9 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
                       phx-target={@myself}
                       class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <.label for={@form[:is_private].id} class="ml-2 block text-sm text-gray-900">
+                    <span class="ml-2 block text-sm text-gray-900">
                       ห้องส่วนตัว
-                    </.label>
+                    </span>
                   </div>
                 </div>
 
@@ -159,10 +159,8 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
 
     case Chat.create_room(room_params) do
       {:ok, _room} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "สร้างห้องสำเร็จ")
-         |> push_patch(to: socket.assigns.patch)}
+        send(self(), {:close_modal, :created})
+        {:noreply, socket}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
@@ -171,9 +169,8 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
 
   @impl true
   def handle_event("close_modal", _params, socket) do
-    {:noreply,
-     socket
-     |> push_patch(to: socket.assigns.patch)}
+    send(self(), :close_modal)
+    {:noreply, socket}
   end
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do

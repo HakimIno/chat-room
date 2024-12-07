@@ -25,8 +25,19 @@ defmodule ExamplePhoenixWeb.ChatLive.Index do
   end
 
   @impl true
-  def handle_event("close_modal", _params, socket) do
-    {:noreply, assign(socket, :show_room_modal, false)}
+  def handle_info(:close_modal, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_room_modal, false)}
+  end
+
+  @impl true
+  def handle_info({:close_modal, :created}, socket) do
+    {:noreply,
+     socket
+     |> put_flash(:info, "สร้างห้องสำเร็จ")
+     |> assign(:show_room_modal, false)
+     |> assign(:rooms, Chat.list_rooms())}
   end
 
   @impl true

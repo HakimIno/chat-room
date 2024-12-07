@@ -10,13 +10,15 @@ defmodule ExamplePhoenix.Chat do
     Repo.all(Room)
   end
 
+  def get_room(id) do
+    case Repo.get(Room, id) do
+      nil -> {:error, :not_found}
+      room -> {:ok, room}
+    end
+  end
+
   def get_room!(id) do
-    room = Repo.get!(Room, id)
-    IO.puts("\n=== Get Room ===")
-    IO.puts("Room ID: #{id}")
-    IO.puts("Is private: #{room.is_private}")
-    IO.puts("Password: #{room.password}")
-    room
+    Repo.get!(Room, id)
   end
 
   def create_room(attrs \\ %{}) do
