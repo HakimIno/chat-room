@@ -4,6 +4,9 @@ defmodule ExamplePhoenix.Application do
 
   @impl true
   def start(_type, _args) do
+    # Load .env file if it exists
+    if File.exists?(".env"), do: Dotenv.load()
+
     children = [
       ExamplePhoenix.Repo,
       ExamplePhoenixWeb.Telemetry,

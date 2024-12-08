@@ -4,26 +4,26 @@
 
 /* This file is for your main application CSS */
 
-#messages-container {
+#messages {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
-#messages-container::-webkit-scrollbar {
+#messages::-webkit-scrollbar {
   width: 8px;
 }
 
-#messages-container::-webkit-scrollbar-track {
+#messages::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 4px;
 }
 
-#messages-container::-webkit-scrollbar-thumb {
+#messages::-webkit-scrollbar-thumb {
   background: #888;
   border-radius: 4px;
 }
 
-#messages-container::-webkit-scrollbar-thumb:hover {
+#messages::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
 
@@ -40,4 +40,26 @@
   .animate-slide-up {
     animation: scale-in 0.2s ease-out;
   }
+}
+
+.chat-input-container {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  z-index: 50;
+}
+
+textarea {
+  min-height: 40px;
+  max-height: 120px;
+  line-height: 1.5;
+}
+
+textarea:focus {
+  outline: none;
+}
+
+.upload-preview {
+  transition: all 0.3s ease;
 }

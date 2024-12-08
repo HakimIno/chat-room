@@ -65,3 +65,25 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+config :ex_aws,
+  access_key_id: "522e5650436a033ffd13c065884753ff",
+  secret_access_key: "446af8c0c1ebe72fe450a51aad53666fc26bf27ef93592ecd85cf5ae243745eb",
+  region: "auto",
+  s3: [
+    scheme: "https://",
+    host: "436b6a515d460c25108e569e4cc2ffdf.r2.cloudflarestorage.com",
+    region: "auto",
+    port: 443
+  ]
+
+# เพิ่มการตั้งค�า SSL
+config :ex_aws, :hackney_opts,
+  recv_timeout: 30_000,
+  pool: false,
+  ssl_options: [
+    verify: :verify_none
+  ]
+
+config :example_phoenix, :r2,
+  bucket_name: "lyra",
+  public_url: "https://pub-11496457277242a8b2070cbd977c20ef.r2.dev"

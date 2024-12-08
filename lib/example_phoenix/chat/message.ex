@@ -5,15 +5,36 @@ defmodule ExamplePhoenix.Chat.Message do
   schema "messages" do
     field :content, :string
     field :user_name, :string
-    field :user_ip, :string
+    field :media_url, :string
+    field :media_type, :string
+    field :content_type, :string
     belongs_to :room, ExamplePhoenix.Chat.Room
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
+  @doc """
+  Creates a changeset for a message.
+  At least one of content or media_url must be present.
+  """
   def changeset(message, attrs) do
     message
-    |> cast(attrs, [:content, :user_name, :room_id, :user_ip])
-    |> validate_required([:content, :user_name, :room_id])
+    |> cast(attrs, [:content, :user_name, :room_id, :media_url, :media_type, :content_type])
+    |> validate_required([:user_name, :room_id])
+    |> validate_at_least_one_present([:content, :media_url])
+    |> foreign_key_constraint(:room_id)
+  end
+
+  defp validate_at_least_one_present(changeset, fields) do
+    if Enum.any?(fields, &present?(changeset, &1)) do
+      changeset
+    else
+      add_error(changeset, hd(fields), "at least one of #{inspect(fields)} must be present")
+    end
+  end
+
+  defp present?(changeset, field) do
+    value = get_field(changeset, field)
+    value && value != ""
   end
 end

@@ -292,7 +292,7 @@ defmodule ExamplePhoenixWeb.CoreComponents do
                 multiple pattern placeholder readonly required rows size step)
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
+    errors = if field.errors, do: field.errors, else: []
 
     assigns
     |> assign(field: nil, id: assigns.id || field.id)

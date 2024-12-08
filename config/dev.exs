@@ -27,7 +27,8 @@ config :example_phoenix, ExamplePhoenixWeb.Endpoint,
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:example_phoenix, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:example_phoenix, ~w(--watch)]}
-  ]
+  ],
+  static_paths: ["priv/static/uploads"]
 
 # ## SSL Support
 #
@@ -83,3 +84,16 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+config :ex_aws,
+  access_key_id: "522e5650436a033ffd13c065884753ff",
+  secret_access_key: "463bf46ba28ffb04f307d54c47d8a0cd00e33eee1c2dbfb7b36a4ee3f2756fb9"
+
+config :ex_aws, :s3,
+  scheme: "https://",
+  host: "436b6a515d460c25108e569e4cc2ffdf.r2.cloudflarestorage.com",
+  region: "auto"
+
+config :example_phoenix, :r2,
+  bucket_name: "lyra",
+  public_url: "https://pub-11496457277242a8b2070cbd977c20ef.r2.dev"

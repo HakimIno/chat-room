@@ -24,49 +24,71 @@
 
   <!-- Messages -->
   <div id="messages-container" class="flex-1 overflow-y-auto px-4 mt-2" phx-hook="ScrollChat">
-    <div class="max-w-3xl mx-auto">
+    <div class="max-w-4xl mx-auto">
       <div id="messages" phx-update="stream">
         <div :for={{dom_id, message} <- @streams.messages} id={dom_id}>
           <div class={[
-            "flex items-end gap-2",
+            "flex items-end gap-2 mb-4",
             if(message.user_name == @current_user, do: "flex-row-reverse", else: "flex-row")
           ]}>
-            <!-- Avatar -->
-            <div class={[
-              "flex-none w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium",
-              if(message.user_name == @current_user, 
-                do: "bg-blue-500", 
-                else: "bg-gray-400")
-            ]}>
-              <%= String.first(message.user_name) %>
-            </div>
-
-            <!-- Message Bubble -->
-            <div class={[
-              "group max-w-[70%] flex flex-col",
-              if(message.user_name == @current_user, do: "items-end", else: "items-start")
-            ]}>
+            <!-- ข้อความ (แสดงเฉพาะเมื่อไม่มีรูป) -->
+            <%= if (message.content && message.content != "") && !message.media_url do %>
               <div class={[
-                "px-4 py-2 rounded-2xl break-words shadow-sm",
-                if(message.user_name == @current_user, 
-                  do: "bg-blue-500 text-white rounded-br-none", 
-                  else: "bg-white text-gray-900 rounded-bl-none")
+                "px-4 py-2 rounded-2xl max-w-[70%]",
+                if(message.user_name == @current_user, do: "bg-blue-500 text-white", else: "bg-gray-100 text-gray-900")
               ]}>
-                <p class="text-sm"><%= message.content %></p>
+                <%= message.content %>
               </div>
-              <div class="flex items-center gap-2 px-2 mt-1">
-                <p class={[
-                  "text-xs",
-                  if(message.user_name == @current_user, 
-                    do: "text-gray-500", 
-                    else: "text-gray-500")
-                ]}>
-                  <%= message.user_name %>
-                </p>
-                <p class="text-[10px] text-gray-400">
-                  <%= format_message_time(message.inserted_at) %>
-                </p>
+            <% end %>
+
+            <!-- รูปภาพหรือวิดีโอ -->
+            <%= if message.media_url do %>
+              <div class="max-w-[70%]">
+                <%= case message.media_type do %>
+                  <% "image" -> %>
+                    <div class={[
+                      "rounded-2xl overflow-hidden",
+                      if(message.user_name == @current_user, do: "bg-blue-500", else: "bg-gray-100")
+                    ]}>
+                      <%= if String.starts_with?(message.media_url, "/") do %>
+                        <img src={"#{Application.get_env(:example_phoenix, :r2)[:public_url]}#{String.replace_prefix(message.media_url, "/lyra", "")}"} 
+                             class="w-full rounded-t-lg max-h-[300px] object-cover" />
+                      <% else %>
+                        <img src={message.media_url} 
+                             class="w-full rounded-t-lg max-h-[300px] object-cover" 
+                             loading="lazy" />
+                      <% end %>
+                    </div>
+                  
+                  <% "video" -> %>
+                    <div class={[
+                      "rounded-2xl overflow-hidden",
+                      if(message.user_name == @current_user, do: "bg-blue-500", else: "bg-gray-100")
+                    ]}>
+                      <video controls class="w-full rounded-t-lg max-h-[300px]">
+                        <source src={message.media_url} type="video/mp4">
+                        Your browser does not support the video tag.
+                      </video>
+                      <%= if message.content && message.content != "" do %>
+                        <div class={[
+                          "px-4 py-3 text-sm",
+                          if(message.user_name == @current_user, do: "text-white", else: "text-gray-900")
+                        ]}>
+                          <%= message.content %>
+                        </div>
+                      <% end %>
+                    </div>
+                <% end %>
               </div>
+            <% end %>
+
+            <!-- เวลาและชื่อผู้ส่ง -->
+            <div class={[
+              "text-xs text-gray-500",
+              if(message.user_name == @current_user, do: "text-right", else: "text-left")
+            ]}>
+              <div><%= message.user_name %></div>
+              <div><%= format_message_time(message.inserted_at) %></div>
             </div>
           </div>
         </div>
@@ -94,6 +116,16 @@
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+        <button 
+          type="button"
+          phx-click="upload_media"
+          class="flex-none p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
+          disabled={@blocked}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </button>
         <div class="flex-1 relative">
@@ -150,6 +182,139 @@
             </button>
           <% end %>
         </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Upload Modal -->
+  <%= if @uploading do %>
+    <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-50">
+      <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">อัพโหลดไฟล์</h3>
+          <button type="button" phx-click="cancel_upload" class="text-gray-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <.form id="upload-form" 
+          for={%{}} 
+          phx-change="validate_upload" 
+          phx-submit="save_upload"
+          class="space-y-4">
+          
+          <!-- Message Input -->
+          <div>
+            <input
+              type="text"
+              name="message"
+              value={@current_message}
+              placeholder="เพิ่มข้อความ... (ไม่บังคับ)"
+              class="w-full rounded-lg px-4 py-2 bg-gray-100 border-0 focus:ring-2 focus:ring-blue-500"
+              autocomplete="off"
+              maxlength="500"
+            />
+          </div>
+
+          <!-- Upload Area -->
+          <div class="space-y-4">
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center"
+                 phx-drop-target={@uploads.media.ref}>
+              <div class="space-y-2">
+                <label class="cursor-pointer inline-block">
+                  <.live_file_input upload={@uploads.media} class="hidden" />
+                  <span class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 inline-block">
+                    เลือกไฟล์
+                  </span>
+                </label>
+                <p class="text-sm text-gray-500">
+                  หรือลากไฟล์มาวาง (รองรับ JPG, PNG, GIF, MP4, MOV ขนาดไม่เกิน 10MB)
+                </p>
+              </div>
+            </div>
+
+            <!-- Preview Area -->
+            <%= if length(@uploads.media.entries) > 0 do %>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <%= for entry <- @uploads.media.entries do %>
+                  <div class="relative group">
+                    <%= if String.starts_with?(entry.client_type, "image/") do %>
+                      <.live_img_preview entry={entry} class="w-full h-32 object-cover rounded-lg" />
+                    <% else %>
+                      <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    <% end %>
+
+                    <!-- Cancel Button -->
+                    <button type="button"
+                            phx-click="cancel_entry"
+                            phx-value-ref={entry.ref}
+                            class="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full 
+                                   opacity-0 group-hover:opacity-100 transition-opacity">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+
+                    <!-- File Info -->
+                    <div class="text-xs text-gray-500 mt-1">
+                      <div class="truncate"><%= entry.client_name %></div>
+                      <div><%= format_file_size(entry.client_size) %></div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+
+            <!-- Error Messages -->
+            <%= for err <- upload_errors(@uploads.media) do %>
+              <div class="text-red-500 text-sm"><%= err %></div>
+            <% end %>
+
+            <!-- Submit Button -->
+            <button type="submit"
+                    disabled={Enum.empty?(@uploads.media.entries)}
+                    class="w-full bg-blue-500 text-white rounded-lg py-3 font-medium
+                           hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed
+                           transition-colors">
+              <%= if Enum.empty?(@uploads.media.entries) do %>
+                เลือกไฟล์่อนส่ง
+              <% else %>
+                ส่ง <%= length(@uploads.media.entries) %> ไฟล์
+              <% end %>
+            </button>
+          </div>
+        </.form>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Image Gallery Modal -->
+  <%= if @show_gallery do %>
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+      <div class="relative">
+        <button 
+          class="absolute top-4 right-4 text-white hover:text-gray-300"
+          phx-click="close_gallery"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        
+        <img 
+          src={@current_image} 
+          class="max-h-[90vh] max-w-[90vw] object-contain"
+          alt="Gallery image"
+        />
       </div>
     </div>
   <% end %>

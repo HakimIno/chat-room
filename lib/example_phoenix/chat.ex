@@ -57,7 +57,7 @@ defmodule ExamplePhoenix.Chat do
         {:ok, create_rate_limit(user_id)}
 
       rate_limit.last_attempt_at < block_expires_at ->
-        # รีเซ็��หลังจากพ้นระยะเวลาบล็อก
+        # รีเซ็หลังจากพ้นระยะเวลาบล็อก
         {:ok, reset_rate_limit(rate_limit)}
 
       rate_limit.last_attempt_at < one_hour_ago ->

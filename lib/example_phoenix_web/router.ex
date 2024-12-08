@@ -5,9 +5,13 @@ defmodule ExamplePhoenixWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, {ExamplePhoenixWeb.Layouts, :root}
+    plug :put_root_layout, html: {ExamplePhoenixWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug Plug.Static,
+      at: "/uploads",
+      from: Path.expand("./priv/static/uploads"),
+      gzip: false
   end
 
   pipeline :auth do
