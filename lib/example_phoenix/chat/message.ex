@@ -8,6 +8,7 @@ defmodule ExamplePhoenix.Chat.Message do
     field :media_url, :string
     field :media_type, :string
     field :content_type, :string
+    field :title, :string
     belongs_to :room, ExamplePhoenix.Chat.Room
 
     timestamps(type: :utc_datetime)
@@ -19,7 +20,7 @@ defmodule ExamplePhoenix.Chat.Message do
   """
   def changeset(message, attrs) do
     message
-    |> cast(attrs, [:content, :user_name, :room_id, :media_url, :media_type, :content_type])
+    |> cast(attrs, [:content, :user_name, :room_id, :media_url, :media_type, :content_type, :title])
     |> validate_required([:user_name, :room_id])
     |> validate_at_least_one_present([:content, :media_url])
     |> foreign_key_constraint(:room_id)

@@ -4,7 +4,6 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   alias ExamplePhoenix.Chat
   import Phoenix.Component
   import Phoenix.HTML.Link
-  import Phoenix.LiveView.Helpers
   require Logger
 
   # Add emoji list as a module attribute
@@ -101,7 +100,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
 
   @impl true
   def handle_event("form-update", %{"message" => message}, socket) do
-    {:noreply, assign(socket, :current_message, message)}
+    {:noreply, assign(socket, current_message: message)}
   end
 
   @impl true
@@ -126,23 +125,198 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   end
 
   @impl true
-  def handle_event("submit_message", %{"message" => message}, socket) do
-    # ตรวจสอบว่ามีการอัพโหลดไฟล์หาอยู่หรือไม่
-    if uploading?(socket) do
-      {:noreply, put_flash(socket, :error, "Please wait for file upload to complete")}
-    else
-      case handle_message_submit(message, socket) do
-        {:ok, socket} ->
-          {:noreply, socket}
-        {:error, message, socket} ->
-          {:noreply, put_flash(socket, :error, message)}
-      end
+  def handle_event("submit_message", %{"message" => url}, socket) when is_binary(url) and url != "" do
+    cond do
+      # YouTube
+      String.match?(url, ~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/) ->
+        handle_youtube_url(socket, url)
+
+      # Instagram
+      String.match?(url, ~r/instagram\.com/) ->
+        handle_instagram_url(socket, url)
+
+      # TikTok
+      String.match?(url, ~r/tiktok\.com/) ->
+        handle_tiktok_url(socket, url)
+
+      # Facebook
+      String.match?(url, ~r/facebook\.com|fb\.com/) ->
+        handle_facebook_url(socket, url)
+
+      # Twitter/X
+      String.match?(url, ~r/twitter\.com|x\.com/) ->
+        handle_twitter_url(socket, url)
+
+      # ข้อความปกติ
+      true ->
+        create_regular_message(socket, url)
     end
   end
 
-  @impl true
-  def handle_event("submit_message", _params, socket) do
-    {:noreply, socket}
+  defp handle_youtube_url(socket, url) do
+    video_id = extract_youtube_id(url)
+
+    case get_youtube_metadata(url) do
+      {:ok, metadata} ->
+        create_social_message(socket, %{
+          content: url,
+          media_url: "https://img.youtube.com/vi/#{video_id}/maxresdefault.jpg",
+          media_type: "youtube",
+          title: metadata["title"]
+        })
+      _ ->
+        create_regular_message(socket, url)
+    end
+  end
+
+  defp get_youtube_metadata(url) do
+    case HTTPoison.get("https://www.youtube.com/oembed?url=#{url}&format=json") do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        Jason.decode(body)
+      _ ->
+        {:error, "Could not fetch YouTube metadata"}
+    end
+  end
+
+  defp handle_instagram_url(socket, url) do
+    case Regex.run(~r/instagram\.com\/(p|reel)\/([^\/\?]+)/, url) do
+      [_, type, post_id] ->
+        create_social_message(socket, %{
+          content: url,
+          media_url: "https://www.instagram.com/p/#{post_id}/embed/",
+          media_type: "instagram",
+          title: "Instagram #{String.capitalize(type)}",
+          platform: "Instagram"
+        })
+      _ ->
+        create_regular_message(socket, url)
+    end
+  end
+
+  defp handle_tiktok_url(socket, url) do
+    case Regex.run(~r/tiktok\.com\/@[^\/]+\/video\/(\d+)/, url) do
+      [_, video_id] ->
+        create_social_message(socket, %{
+          content: url,
+          media_url: "https://www.tiktok.com/embed/v2/#{video_id}",
+          media_type: "tiktok",
+          title: "TikTok Video",
+          platform: "TikTok"
+        })
+      _ ->
+        create_regular_message(socket, url)
+    end
+  end
+
+  defp handle_facebook_url(socket, url) do
+    case get_facebook_metadata(url) do
+      {:ok, metadata} ->
+        create_social_message(socket, %{
+          content: url,
+          media_url: "https://www.facebook.com/plugins/post.php?href=#{URI.encode_www_form(url)}",
+          media_type: "facebook",
+          title: metadata.title || "Facebook Post",
+          thumbnail_url: metadata.image,
+          platform: "Facebook"
+        })
+      _ ->
+        create_social_message(socket, %{
+          content: url,
+          media_url: "https://www.facebook.com/plugins/post.php?href=#{URI.encode_www_form(url)}",
+          media_type: "facebook",
+          title: "Facebook Post",
+          platform: "Facebook"
+        })
+    end
+  end
+
+  defp get_facebook_metadata(url) do
+    case HTTPoison.get(url) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        # ดึง metadata จาก Open Graph tags
+        title = extract_meta_content(body, "og:title")
+        image = extract_meta_content(body, "og:image")
+        description = extract_meta_content(body, "og:description")
+
+        {:ok, %{
+          title: title,
+          image: image,
+          description: description
+        }}
+      _ ->
+        :error
+    end
+  end
+
+  defp extract_meta_content(html, property) do
+    case Floki.parse_document(html) do
+      {:ok, document} ->
+        document
+        |> Floki.find("meta[property='#{property}']")
+        |> Floki.attribute("content")
+        |> List.first()
+      _ ->
+        nil
+    end
+  end
+
+  defp handle_twitter_url(socket, url) do
+    case Regex.run(~r/(?:twitter\.com|x\.com)\/[^\/]+\/status\/(\d+)/, url) do
+      [_, tweet_id] ->
+        create_social_message(socket, %{
+          content: url,
+          media_url: "https://platform.twitter.com/embed/Tweet.html?id=#{tweet_id}",
+          media_type: "twitter",
+          title: "X Post",
+          preview_url: url,
+          platform: "X"
+        })
+      _ ->
+        create_regular_message(socket, url)
+    end
+  end
+
+  defp create_social_message(socket, params) do
+    message_params = Map.merge(params, %{
+      user_name: socket.assigns.current_user,
+      room_id: socket.assigns.room.id,
+      content_type: params.media_type
+    })
+
+    case Chat.create_message(message_params) do
+      {:ok, message} ->
+        {:noreply,
+         socket
+         |> stream_insert(:messages, message, at: -1)
+         |> assign(:current_message, "")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "ไม่สามารถส่งข้อความได้")}
+    end
+  end
+
+  defp create_regular_message(socket, content) do
+    case Chat.create_message(%{
+      content: content,
+      user_name: socket.assigns.current_user,
+      room_id: socket.assigns.room.id
+    }) do
+      {:ok, message} ->
+        {:noreply,
+         socket
+         |> stream_insert(:messages, message, at: -1)
+         |> assign(:current_message, "")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "ไม่สามารถส่งข้อความได้")}
+    end
+  end
+
+  defp extract_youtube_id(url) do
+    case Regex.run(~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/, url) do
+      [_, id] -> id
+      _ -> nil
+    end
   end
 
   @impl true
@@ -222,82 +396,56 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   end
 
   @impl true
-  def handle_event("validate_upload", %{"message" => message}, socket) do
-    {:noreply, assign(socket, :current_message, message)}
-  end
-
-  @impl true
-  def handle_event("save_upload", %{"message" => message}, socket) do
-    Logger.info("Handling save_upload event")
-    Logger.info("Message: #{message}")
-    Logger.info("Uploads: #{inspect(socket.assigns.uploads.media.entries)}")
+  def handle_event("save_upload", _params, socket) do
+    Logger.info("Save upload triggered")
 
     case socket.assigns.uploads.media.entries do
       [entry | _] ->
-        Logger.info("Processing upload entry: #{inspect(entry)}")
-
-        consume_uploaded_entries(socket, :media, fn %{path: path}, _entry ->
-          ext = Path.extname(entry.client_name)
-          filename = "#{System.system_time()}-#{:crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)}#{ext}"
-
-          Logger.info("Attempting to upload file: #{filename}")
-          Logger.info("File path: #{path}")
-          Logger.info("Content type: #{entry.client_type}")
-
-          case ExamplePhoenix.Uploads.upload_file(%{
-            path: path,
-            filename: filename,
-            content_type: entry.client_type
-          }) do
+        consume_uploaded_entries(socket, :media, fn %{path: path}, entry ->
+          case upload_file(path, entry) do
             {:ok, url} ->
-              Logger.info("File uploaded successfully to: #{url}")
-
               message_params = %{
-                content: if(message == "", do: nil, else: message),
                 user_name: socket.assigns.current_user,
                 room_id: socket.assigns.room.id,
                 media_url: url,
                 media_type: get_media_type(entry.client_type),
-                content_type: entry.client_type
+                content_type: entry.client_type,
+                title: entry.client_name
               }
 
               case Chat.create_message(message_params) do
-                {:ok, _message} -> {:ok, url}
-                {:error, changeset} ->
-                  Logger.error("Failed to create message: #{inspect(changeset)}")
-                  {:error, "Failed to save message"}
+                {:ok, message} -> {:ok, message}
+                {:error, _} -> {:error, "ไม่สามารถบันทึกข้อความได้"}
               end
 
-            {:error, reason} ->
-              Logger.error("Failed to upload file: #{inspect(reason)}")
-              {:error, "Failed to upload file"}
+            {:error, _} -> {:error, "อัพโหลดไฟล์ไม่สำเร็จ"}
           end
         end)
         |> case do
-          [{:ok, _url}] ->
+          [{:ok, message}] ->
             {:noreply,
              socket
+             |> stream_insert(:messages, message, at: -1)
              |> assign(:uploading, false)
-             |> assign(:current_message, "")}
+             |> put_flash(:info, "อัพโหลดสำเร็จ")}
 
           [{:error, reason}] ->
             {:noreply,
              socket
-             |> put_flash(:error, reason)
-             |> assign(:uploading, false)}
+             |> assign(:uploading, false)
+             |> put_flash(:error, reason)}
 
           _ ->
             {:noreply,
              socket
-             |> put_flash(:error, "Upload failed")
-             |> assign(:uploading, false)}
+             |> assign(:uploading, false)
+             |> put_flash(:error, "เกิดข้อผิดพลาดที่ไม่คาดคิด")}
         end
 
       [] ->
         {:noreply,
          socket
-         |> put_flash(:error, "No file selected")
-         |> assign(:uploading, false)}
+         |> put_flash(:error, "ไม่พบไฟล์ที่จะอัพโหลด")}
     end
   end
 
@@ -378,10 +526,10 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
             # สร้างข้อความพร้อมรูปภาพทั้งหมด
             url = successful |> List.first() |> elem(1)
             message_params = %{
-              content: if(byte_size(message) > 0, do: message, else: nil),
+              content: if(message == "", do: nil, else: message),
               user_name: socket.assigns.current_user,
               room_id: socket.assigns.room.id,
-              media_url: url,  # ส่งเป็น list ของ URLs
+              media_url: url,  # ส่งเป็น list ขอ URLs
               media_type: "image",
               content_type: List.first(media_entries).client_type
             }
@@ -432,7 +580,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   defp format_block_time(seconds) do
     now = NaiveDateTime.local_now()
     block_until = NaiveDateTime.add(now, seconds, :second)
-    "คุณถูกแบนจนถึกเวลา #{Calendar.strftime(block_until, "%H:%M")}"
+    "คุณถูกแบนจนถึเวลา #{Calendar.strftime(block_until, "%H:%M")}"
   end
 
   defp get_client_ip(socket) do
@@ -447,17 +595,12 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
         IO.puts("Using Ngrok IP: #{ngrok_ip}")
         ngrok_ip
 
-      # ถ้าไม่มี ngrok ให้ใช้ x-forwarded-for
+      # ้าไม่มี ngrok ให้ใช้ x-forwarded-for
       x_forwarded_for = get_forwarded_for(connect_info) ->
         IO.puts("Using X-Forwarded-For: #{x_forwarded_for}")
         x_forwarded_for
 
-      # ้าไม่มี x-forwarded-for ให้ใช้ x-real-ip
-      x_real_ip = get_real_ip(connect_info) ->
-        IO.puts("Using X-Real-IP: #{x_real_ip}")
-        x_real_ip
-
-      # ถ้ามี header ใดๆ ให้ใช้ IP จก peer_data
+      # ้าไม่มี x-forwarded-for ให้ใ IP จก peer_data
       peer_data = get_connect_info(socket, :peer_data) ->
         ip = case peer_data do
           %{address: {127, 0, 0, 1}} -> "localhost"
@@ -517,7 +660,6 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     cond do
       String.starts_with?(content_type, "image/") -> "image"
       String.starts_with?(content_type, "video/") -> "video"
-      String.starts_with?(content_type, "audio/") -> "audio"
       true -> "file"
     end
   end
@@ -533,10 +675,11 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
 
   # Helper function to remove empty content
   defp maybe_remove_empty_content(params) do
-    if is_nil(params.content) || String.trim(params.content) == "" do
-      Map.delete(params, :content)
-    else
-      params
+    case params do
+      %{content: content} when is_binary(content) ->
+        if String.trim(content) == "", do: Map.delete(params, :content), else: params
+      _ ->
+        params
     end
   end
 
@@ -603,14 +746,14 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     else
       {:noreply,
        socket
-       |> put_flash(:error, "กรุณารอให้ไฟล์อัพโหลดเสร็จสมบูรณ์")}
+       |> put_flash(:error, "กรุณารอให้ไฟล์อัพโหลดเสร็จสมบูร์")}
     end
   end
 
   defp handle_media_message(socket, _message, _) do
     {:noreply,
      socket
-     |> put_flash(:error, "ไม่พรอมอัพพโหลดไฟล์ห๗ี่อัพโหลด")
+     |> put_flash(:error, "ไม่รอมอัพพโหลดไฟล์ห๗ี่อัพโหลด")
      |> assign(:uploading, false)}
   end
 
@@ -636,71 +779,61 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     |> Enum.any?(fn entry -> not entry.done? end)
   end
 
-  # แยกการจัดการข้อควาออกมา
+  # แยการจัดการข้อควาออกมา
   defp handle_message_submit(message, socket) do
-    case socket.assigns.uploads.media.entries do
-      [] ->
-        # ส่งข้อความปกติ
-        case Chat.create_message(%{
-          content: message,
-          user_name: socket.assigns.current_user,
-          room_id: socket.assigns.room.id
-        }) do
-          {:ok, _message} -> {:ok, socket |> assign(:current_message, "")}
-          {:error, _} -> {:error, "ไม่สามารถส่งข้อคความได้", socket}
-        end
+    cond do
+      String.match?(message, ~r/^https?:\/\//) ->
+        case get_url_metadata(message) do
+          {:ok, metadata} ->
+            message_params = %{
+              content: message,
+              user_name: socket.assigns.current_user,
+              room_id: socket.assigns.room.id,
+              media_url: metadata.media_url,
+              media_type: metadata.media_type,
+              content_type: metadata.media_type,
+              title: metadata.title || URI.parse(message).host || message
+            }
 
-      [entry] ->
-        # ส่งรูปภาพหรือวิดีโอ
-        if entry.done? do
-          consume_uploaded_entries(socket, :media, fn meta, entry ->
-            ext = Path.extname(entry.client_name)
-            filename = "#{System.system_time()}-#{:crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)}#{ext}"
-
-            case ExamplePhoenix.Uploads.upload_file(%{
-              path: meta.path,
-              filename: filename,
-              content_type: entry.client_type
-            }) do
-              {:ok, url} ->
-                message_params = %{
-                  content: if(message == "", do: nil, else: message),
-                  user_name: socket.assigns.current_user,
-                  room_id: socket.assigns.room.id,
-                  media_url: url,
-                  media_type: get_media_type(entry.client_type),
-                  content_type: entry.client_type
-                }
-
-                case Chat.create_message(message_params) do
-                  {:ok, _message} -> {:ok, socket}
-                  {:error, _} -> {:error, "Failed to save message"}
-                end
-
-              {:error, reason} ->
-                Logger.error("Upload failed: #{inspect(reason)}")
-                {:error, "Failed to upload file"}
+            case Chat.create_message(message_params) do
+              {:ok, _message} -> {:ok, assign(socket, :current_message, "")}
+              {:error, _} -> create_text_message(message, socket)
             end
-          end)
-          |> case do
-            [{:ok, socket}] ->
-              {:ok, socket |> assign(:uploading, false) |> assign(:current_message, "")}
-            [{:error, reason}] ->
-              {:error, reason, socket}
-            _ ->
-              {:error, "Upload failed", socket}
-          end
-        else
-          {:error, "Upload not complete", socket}
+
+          _ -> create_text_message(message, socket)
         end
 
-      _ ->
-        {:error, "Too many files", socket}
+      true ->
+        create_text_message(message, socket)
     end
   end
 
   # ปรับปรุงฟังก์ชัน handle_uploaded_file
   defp handle_uploaded_file(path, entry) do
+    Logger.info("Handling file upload: #{entry.client_name}")
+
+    ext = Path.extname(entry.client_name)
+    filename = "#{System.system_time()}-#{:crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)}#{ext}"
+
+    upload_params = %{
+      path: path,
+      filename: filename,
+      content_type: entry.client_type
+    }
+
+    Logger.info("Upload params: #{inspect(upload_params)}")
+
+    case ExamplePhoenix.Uploads.upload_file(upload_params) do
+      {:ok, url} ->
+        Logger.info("File uploaded successfully to: #{url}")
+        {:ok, url}
+      {:error, reason} = error ->
+        Logger.error("Upload failed: #{inspect(reason)}")
+        error
+    end
+  end
+
+  defp upload_file(path, entry) do
     ext = Path.extname(entry.client_name)
     filename = "#{System.system_time()}-#{:crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)}#{ext}"
 
@@ -714,7 +847,31 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     end
   end
 
-  # ปรับบปรุงฟังก์ชัน create_media_message
+  # เพิ่มฟังก์ชัน handle_upload_result
+  defp handle_upload_result(results, socket) do
+    case results do
+      [{:ok, message}] ->
+        {:noreply,
+         socket
+         |> assign(:current_message, "")
+         |> assign(:uploading, false)
+         |> stream_insert(:messages, message, at: -1)}
+
+      [{:error, reason}] ->
+        {:noreply,
+         socket
+         |> put_flash(:error, reason)
+         |> assign(:uploading, false)}
+
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "เกิดข้อผิดพลาดที่ไม่คาดคิด")
+         |> assign(:uploading, false)}
+    end
+  end
+
+  @doc false
   defp create_media_message(content, url, content_type, socket) do
     message_params = %{
       content: content,
@@ -734,17 +891,26 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
       {:error, _} ->
         {:error, "Failed to send message", socket}
     end
+
   end
 
   # เพิ่มการจัดการ error ที่ดีขึ้น
-  defp handle_upload_error(socket, error_message) do
+  defp handle_upload_error(socket, error) do
+    error_message = case error do
+      :too_large -> "ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 20MB)"
+      :too_many_files -> "สามารถอัพโหลดได้ครั้งละ 1 ไฟล์เท่านั้น"
+      message when is_binary(message) -> message
+      _ -> "เกิดข้อผิดพลาดในการอัพโหลด กรุณาลองใหม่อีกครั้ง"
+    end
+
     {:noreply,
      socket
-     |> put_flash(:error, "ไกิดข้อผิดพลาด: #{error_message}")
+     |> put_flash(:error, error_message)
      |> assign(:uploading, false)}
   end
 
   # สร้งข้อความปกติ
+  @doc false
   defp create_text_message("", socket), do: {:ok, socket}
   defp create_text_message(content, socket) do
     case Chat.create_message(%{
@@ -755,28 +921,6 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
       {:ok, _message} -> {:ok, assign(socket, current_message: "")}
       {:error, _} -> {:error, "Failed to send message", socket}
     end
-  end
-
-  # เพิ่ม error handling สำหรับ upload
-  defp handle_upload_error(socket, :too_large) do
-    {:noreply,
-     socket
-     |> put_flash(:error, "ไมล์มีขนาใหญ่เกินไป (สูงสุด 20MB)")
-     |> assign(:uploading, false)}
-  end
-
-  defp handle_upload_error(socket, :too_many_files) do
-    {:noreply,
-     socket
-     |> put_flash(:error, "สามารถอัพโหลดได้ครั้งละ 1 ไฟล์เท่านั้น")
-     |> assign(:uploading, false)}
-  end
-
-  defp handle_upload_error(socket, _) do
-    {:noreply,
-     socket
-     |> put_flash(:error, "ไกิดข้อผิดพลาดลาดในการอัพโหลด กรุณาลองใหม่อีกครั้ง")
-     |> assign(:uploading, false)}
   end
 
   @impl true
@@ -799,7 +943,8 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
      socket
      |> assign(:show_gallery, false)
      |> assign(:gallery_images, [])
-     |> assign(:current_gallery_index, 0)}
+     |> assign(:current_gallery_index, 0)
+     |> assign(:current_image, nil)}
   end
 
   @impl true
@@ -825,11 +970,153 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     )}
   end
 
-  @impl true
-  def handle_event("close_gallery", _, socket) do
-    {:noreply, assign(socket,
-      show_gallery: false,
-      current_image: nil
-    )}
+  # เพิ่ม function ใหม่สำหรับตร���จสอบ YouTube URL
+  defp is_youtube_url?(content) do
+    youtube_regex = ~r/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
+    String.match?(content, youtube_regex)
+  end
+
+  # เพิ่ม function สำหรับดึง video ID
+  defp extract_youtube_id(url) do
+    youtube_regex = ~r/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
+    case Regex.run(youtube_regex, url) do
+      [_, video_id] -> {:ok, video_id}
+      _ -> :error
+    end
+  end
+
+  # ปรับปรุงฟังก์ชัน get_url_metadata
+  defp get_url_metadata(url) do
+    Logger.info("Getting metadata for URL: #{url}")
+
+    cond do
+      # YouTube
+      String.match?(url, ~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/) ->
+        video_id = case Regex.run(~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/, url) do
+          [_, id] -> id
+          _ -> nil
+        end
+
+        if video_id do
+          case HTTPoison.get("https://www.youtube.com/oembed?url=#{url}&format=json") do
+            {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+              case Jason.decode(body) do
+                {:ok, data} ->
+                  {:ok, %{
+                    title: data["title"],
+                    media_url: "https://img.youtube.com/vi/#{video_id}/maxresdefault.jpg",
+                    media_type: "youtube"
+                  }}
+                _ -> {:error, "Invalid YouTube response"}
+              end
+            _ -> {:error, "Failed to fetch YouTube data"}
+          end
+        else
+          {:error, "Invalid YouTube URL"}
+        end
+
+      # Instagram
+      String.match?(url, ~r/instagram\.com\/(p|reel)\/([^\/\?]+)/) ->
+        [_, type, post_id] = Regex.run(~r/instagram\.com\/(p|reel)\/([^\/\?]+)/, url)
+        {:ok, %{
+          title: "Instagram #{String.capitalize(type)}",
+          media_url: "https://www.instagram.com/#{type}/#{post_id}/embed",
+          media_type: "instagram"
+        }}
+
+      # TikTok
+      String.match?(url, ~r/tiktok\.com\/@[^\/]+\/video\/(\d+)/) ->
+        [_, video_id] = Regex.run(~r/tiktok\.com\/@[^\/]+\/video\/(\d+)/, url)
+        {:ok, %{
+          title: "TikTok Video",
+          media_url: "https://www.tiktok.com/embed/v2/#{video_id}",
+          media_type: "tiktok"
+        }}
+
+      # Twitter/X
+      String.match?(url, ~r/(?:twitter\.com|x\.com)\/[^\/]+\/status\/(\d+)/) ->
+        [_, tweet_id] = Regex.run(~r/(?:twitter\.com|x\.com)\/[^\/]+\/status\/(\d+)/, url)
+        {:ok, %{
+          title: "X Post",
+          media_url: "https://platform.twitter.com/embed/Tweet.html?id=#{tweet_id}",
+          media_type: "twitter"
+        }}
+
+      # Facebook
+      String.match?(url, ~r/facebook\.com/) ->
+        encoded_url = URI.encode_www_form(url)
+        {:ok, %{
+          title: "Facebook Post",
+          media_url: "https://www.facebook.com/plugins/post.php?href=#{encoded_url}&show_text=true&width=500",
+          media_type: "facebook"
+        }}
+
+      true ->
+        {:error, "Unsupported URL"}
+    end
+  end
+
+  # ปรับปรุงฟังก์ชัน handle_media_upload
+  defp handle_media_upload(message, socket) do
+    Logger.info("Handling media upload with message: #{inspect(message)}")
+
+    [entry | _] = socket.assigns.uploads.media.entries
+
+    if entry.done? do
+      consume_uploaded_entries(socket, :media, fn %{path: path}, _entry ->
+        case upload_file(path, entry) do
+          {:ok, url} ->
+            Logger.info("File uploaded successfully to: #{url}")
+
+            message_params = %{
+              content: if(byte_size(message || "") > 0, do: message, else: nil),
+              user_name: socket.assigns.current_user,
+              room_id: socket.assigns.room.id,
+              media_url: url,
+              media_type: get_media_type(entry.client_type),
+              content_type: entry.client_type,
+              title: entry.client_name
+            }
+            |> maybe_remove_empty_content()
+
+            case Chat.create_message(message_params) do
+              {:ok, new_message} ->
+                Logger.info("Message created successfully")
+                {:ok, new_message}
+              {:error, reason} ->
+                Logger.error("Failed to create message: #{inspect(reason)}")
+                {:error, "ไม่สามารถบันทึกข้อความได้"}
+            end
+
+          {:error, reason} ->
+            Logger.error("Upload failed: #{inspect(reason)}")
+            {:error, "อัพโหลดไฟล์ไม่สำเร็จ"}
+        end
+      end)
+      |> case do
+        [{:ok, new_message}] ->
+          {:noreply,
+           socket
+           |> stream_insert(:messages, new_message, at: -1)
+           |> assign(:current_message, "")
+           |> assign(:uploading, false)}
+
+        [{:error, reason}] ->
+          {:noreply,
+           socket
+           |> put_flash(:error, reason)
+           |> assign(:uploading, false)}
+
+        _ ->
+          {:noreply,
+           socket
+           |> put_flash(:error, "เกิดข้อผิดพลาดที่ไม่คาดคิด")
+           |> assign(:uploading, false)}
+      end
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, "กรุณารอให้อัพโหลดเสร็จสมบูรณ์")}
+    end
   end
 end

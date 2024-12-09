@@ -1,17 +1,37 @@
 defmodule ExamplePhoenixWeb.Router do
   use ExamplePhoenixWeb, :router
 
+  @security_headers %{
+    "content-security-policy" =>
+      "default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https:; " <>
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " <>
+      "style-src 'self' 'unsafe-inline' https:; " <>
+      "img-src 'self' blob: data: https: *; " <>
+      "font-src 'self' data: https:; " <>
+      "connect-src 'self' https: wss:; " <>
+      "frame-src *; " <>
+      "worker-src 'self' blob: https:; " <>
+      "media-src 'self' blob: https:; " <>
+      "object-src 'none'; " <>
+      "base-uri 'self';",
+    "permissions-policy" => "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()",
+    "x-frame-options" => "ALLOWALL",
+    "x-content-type-options" => "nosniff",
+    "x-xss-protection" => "1; mode=block",
+    "access-control-allow-origin" => "*",
+    "access-control-allow-methods" => "GET, POST, PUT, DELETE, OPTIONS",
+    "access-control-allow-headers" => "accept, content-type, authorization",
+    "access-control-allow-credentials" => "true",
+    "access-control-max-age" => "600"
+  }
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, html: {ExamplePhoenixWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
-    plug Plug.Static,
-      at: "/uploads",
-      from: Path.expand("./priv/static/uploads"),
-      gzip: false
+    plug :put_secure_browser_headers, @security_headers
   end
 
   pipeline :auth do

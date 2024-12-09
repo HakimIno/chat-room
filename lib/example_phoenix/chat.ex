@@ -8,6 +8,9 @@ defmodule ExamplePhoenix.Chat do
   @max_rooms_per_hour 5
   @block_duration_hours 24
 
+  # เพิ่ม cache สำหรับ URL metadata
+  @cache_ttl :timer.hours(24) # เก็บ cache 24 ชั่วโมง
+
   def list_rooms do
     Repo.all(Room)
   end
@@ -222,5 +225,105 @@ defmodule ExamplePhoenix.Chat do
   def create_room(attrs, current_user) do
     attrs = Map.put(attrs, "creator_id", current_user)
     create_room(attrs)
+  end
+
+  def get_url_metadata(url) do
+    cache_key = "url_metadata:#{url}"
+
+    case Cachex.get(:my_cache, cache_key) do
+      {:ok, nil} ->
+        # ถ้าไม่มีใน cache ให้ดึงข้อมูลใหม่
+        metadata = fetch_url_metadata(url)
+        Cachex.put(:my_cache, cache_key, metadata, ttl: @cache_ttl)
+        metadata
+
+      {:ok, metadata} ->
+        # ถ้ามีใน cache ให้ใช้ข้อมูลเดิม
+        metadata
+    end
+  end
+
+  def create_url_message(attrs) do
+    # สร้าง message ก่อนแบบไม่มี metadata
+    {:ok, message} = create_message(attrs)
+
+    # schedule background job
+    %{url: attrs.content, message_id: message.id}
+    |> FetchUrlMetadataWorker.new()
+    |> Oban.insert()
+
+    {:ok, message}
+  end
+
+  def fetch_url_metadata(url) do
+    # เพิ่ม timeout และ error handling
+    try do
+      Task.await(Task.async(fn ->
+        case HTTPoison.get(url, [], timeout: 5000, recv_timeout: 5000) do
+          {:ok, response} -> parse_metadata(response)
+          {:error, _} -> default_metadata()
+        end
+      end), 6000)
+    catch
+      :exit, _ -> default_metadata()
+    end
+  end
+
+  defp default_metadata do
+    %{
+      title: nil,
+      media_url: nil,
+      media_type: "link"
+    }
+  end
+
+  defp parse_metadata(response) do
+    # Parse HTML using Floki
+    case Floki.parse_document(response.body) do
+      {:ok, document} ->
+        %{
+          title: extract_title(document),
+          media_url: extract_media_url(document),
+          media_type: determine_media_type(document)
+        }
+      _ -> default_metadata()
+    end
+  end
+
+  defp extract_title(document) do
+    document
+    |> Floki.find("title")
+    |> Floki.text()
+    |> case do
+      "" -> nil
+      title -> title
+    end
+  end
+
+  defp extract_media_url(document) do
+    document
+    |> Floki.find("meta[property='og:image']")
+    |> Floki.attribute("content")
+    |> List.first()
+  end
+
+  defp determine_media_type(document) do
+    cond do
+      has_video_metadata?(document) -> "video"
+      has_image_metadata?(document) -> "image"
+      true -> "link"
+    end
+  end
+
+  defp has_video_metadata?(document) do
+    document
+    |> Floki.find("meta[property='og:video']")
+    |> Enum.any?()
+  end
+
+  defp has_image_metadata?(document) do
+    document
+    |> Floki.find("meta[property='og:image']")
+    |> Enum.any?()
   end
 end
