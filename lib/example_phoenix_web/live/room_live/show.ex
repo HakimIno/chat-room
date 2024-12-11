@@ -43,10 +43,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
           ExamplePhoenixWeb.Endpoint.subscribe("room:#{room.id}")
         end
 
-        # ดึง IP address จาก connect_info
         client_ip = get_client_ip(socket)
-
-        # ดึงข้อความทั้งหมดในห้อง
         messages = Chat.list_messages(room.id)
 
         socket =
@@ -66,8 +63,8 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
           |> assign(:upload_valid, false)
           |> assign(:input_focused, false)
           |> allow_upload(:media, @upload_options)
+          |> assign(:emojis, @emojis)
 
-        # เช็คสถานะการแบนหลังจากกำหนดค่า client_ip แล้ว
         if connected?(socket) do
           check_block_status(socket)
         end
@@ -77,7 +74,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
       {:error, _reason} ->
         {:ok,
          socket
-         |> put_flash(:error, "ห้องสน��นาไม่มีอยู่")
+         |> put_flash(:error, "ห้องสนนนาไม่มีอยู่")
          |> redirect(to: ~p"/")}
     end
   end
@@ -574,7 +571,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
       minutes > 0 ->
         "คุณถูกแบน อีก #{minutes} นาที #{remaining_seconds} วินาที จึงจะสามารถส่งข้อความได้"
       true ->
-        "คุณถูกแบน อีก #{remaining_seconds} วินาที จึงจะสามารถส่งข้อความได้"
+        "คุณถูกแบน อีก #{remaining_seconds} วินาที จึจะสามารถส่งข้อความได้"
     end
   end
   defp format_block_time(_), do: "คุณถูกแบน"
@@ -640,7 +637,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
             ip
           _ ->
             Logger.info("Using localhost IP for development")
-            "127.0.0.1"  # ใช้ localhost แทน unknown สำหรับการพัฒนา
+            "127.0.0.1"  # ใช้ localhost แทน unknown ���ำหรับการพัฒนา
         end
     end
   end
@@ -774,7 +771,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   defp handle_media_message(socket, _message, _) do
     {:noreply,
      socket
-     |> put_flash(:error, "ไม่รอมอัพพโหลดไฟล์ห๗ี่อัพโหลด")
+     |> put_flash(:error, "ไม่รอมอัพพโหดไฟล์ห๗ี่อัพโหลด")
      |> assign(:uploading, false)}
   end
 
@@ -1106,7 +1103,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
                 {:ok, new_message}
               {:error, reason} ->
                 Logger.error("Failed to create message: #{inspect(reason)}")
-                {:error, "ไม่สามารถบันทึกข��อความได้"}
+                {:error, "ไม่สามารถบันทึกข้อความได้"}
             end
 
           {:error, reason} ->
