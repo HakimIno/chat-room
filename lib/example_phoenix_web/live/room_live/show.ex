@@ -43,77 +43,41 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
           ExamplePhoenixWeb.Endpoint.subscribe("room:#{room.id}")
         end
 
-        # ดึงข้อความและแปลง media_url ก่อนส่งเข้า stream
-        messages =
-          Chat.list_messages(room.id, 100)
-          |> Enum.map(fn message ->
-            # แปลง media_url ให้เป็น nil ถ้าเป็น list ว่าง
-            media_url = case message.media_url do
-              url when is_binary(url) -> url
-              _ -> nil  # แปลงทุกกรณีอื่นๆ (รวมถึง [] และ nil) เป็น nil
-            end
+        # ดึง IP address จาก connect_info
+        client_ip = get_client_ip(socket)
 
-            # สร้าง message ใหม่ด้วย media_url ที่แปลงแล้ว
-            %{message |
-              media_url: media_url,
-              media_type: (if media_url, do: message.media_type, else: nil),
-              content_type: (if media_url, do: message.content_type, else: nil)
-            }
-          end)
+        # ดึงข้อความทั้งหมดในห้อง
+        messages = Chat.list_messages(room.id)
 
         socket =
           socket
           |> assign(:current_user, session["user_name"])
           |> assign(:room, room)
-          |> assign(:messages, [])
-          |> assign(:message_ids, MapSet.new())
-          |> assign(:current_message, "")
           |> assign(:blocked, false)
           |> assign(:block_remaining_seconds, 0)
+          |> assign(:client_ip, client_ip)
+          |> assign(:current_message, "")
+          |> assign(:message_ids, messages |> Enum.map(& &1.id) |> MapSet.new())
+          |> stream(:messages, messages)
           |> assign(:show_emoji_modal, false)
-          |> assign(:client_ip, get_client_ip(socket))
-          |> assign(:emojis, @emojis)
-          |> assign(:uploading, false)
-          |> allow_upload(:media, @upload_options)
           |> assign(:show_gallery, false)
           |> assign(:current_image, nil)
-          |> assign(:themes, %{
-            "instagram" => %{
-              bg: "bg-gradient-to-br from-purple-50 to-pink-50",
-              badge: "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-600",
-              hover: "group-hover:text-purple-600",
-              button: "bg-gradient-to-br from-purple-500 to-pink-500"
-            },
-            "tiktok" => %{
-              bg: "bg-gradient-to-br from-gray-50 to-gray-100",
-              badge: "bg-gray-100 text-gray-600",
-              hover: "group-hover:text-gray-600",
-              button: "bg-black"
-            },
-            "facebook" => %{
-              bg: "bg-gradient-to-br from-blue-50 to-indigo-50",
-              badge: "bg-blue-100 text-blue-600",
-              hover: "group-hover:text-blue-600",
-              button: "bg-blue-600"
-            },
-            "twitter" => %{
-              bg: "bg-gradient-to-br from-sky-50 to-blue-50",
-              badge: "bg-sky-100 text-sky-600",
-              hover: "group-hover:text-sky-600",
-              button: "bg-sky-500"
-            }
-          })
+          |> assign(:uploading, false)
+          |> assign(:upload_valid, false)
           |> assign(:input_focused, false)
-          |> assign(:keyboard_height, 0)
+          |> allow_upload(:media, @upload_options)
 
-        {:ok,
-         socket
-         |> stream(:messages, messages)}
+        # เช็คสถานะการแบนหลังจากกำหนดค่า client_ip แล้ว
+        if connected?(socket) do
+          check_block_status(socket)
+        end
+
+        {:ok, socket}
 
       {:error, _reason} ->
         {:ok,
          socket
-         |> put_flash(:error, "ห้องสนทนาไม่มีอยู่")
+         |> put_flash(:error, "ห้องสน��นาไม่มีอยู่")
          |> redirect(to: ~p"/")}
     end
   end
@@ -467,7 +431,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
             {:noreply,
              socket
              |> assign(:uploading, false)
-             |> put_flash(:error, "เกิดข้อผิดพลาดที่ไม่ค���ดคิด")}
+             |> put_flash(:error, "เกิดข้อผิดพลาดที่ไม่คาดคิด")}
         end
 
       [] ->
@@ -602,50 +566,82 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     end
   end
 
-  defp format_block_time(seconds) do
-    now = NaiveDateTime.local_now()
-    block_until = NaiveDateTime.add(now, seconds, :second)
-    "คุณถูกแบนจนถึเวลา #{Calendar.strftime(block_until, "%H:%M")}"
+  defp format_block_time(seconds) when is_integer(seconds) do
+    minutes = div(seconds, 60)
+    remaining_seconds = rem(seconds, 60)
+
+    cond do
+      minutes > 0 ->
+        "คุณถูกแบน อีก #{minutes} นาที #{remaining_seconds} วินาที จึงจะสามารถส่งข้อความได้"
+      true ->
+        "คุณถูกแบน อีก #{remaining_seconds} วินาที จึงจะสามารถส่งข้อความได้"
+    end
+  end
+  defp format_block_time(_), do: "คุณถูกแบน"
+
+  defp check_block_status(socket) do
+    client_ip = socket.assigns.client_ip || "unknown"
+
+    case ExamplePhoenix.Accounts.RateLimit.check_rate_limit(client_ip) do
+      {:error, remaining_seconds} ->
+        Process.send_after(self(), {:check_block_status}, 1000)
+        {:noreply,
+         socket
+         |> assign(:blocked, true)
+         |> assign(:block_remaining_seconds, remaining_seconds)}
+
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(:blocked, false)
+         |> assign(:block_remaining_seconds, 0)}
+    end
+  end
+
+  @impl true
+  def handle_info({:check_block_status}, socket) do
+    if socket.assigns.blocked do
+      new_remaining = max(0, socket.assigns.block_remaining_seconds - 1)
+
+      if new_remaining > 0 do
+        Process.send_after(self(), {:check_block_status}, 1000)
+        {:noreply, assign(socket, :block_remaining_seconds, new_remaining)}
+      else
+        {:noreply,
+         socket
+         |> assign(:blocked, false)
+         |> assign(:block_remaining_seconds, 0)}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   defp get_client_ip(socket) do
-    connect_info = get_connect_info(socket, :x_headers)
+    require Logger
 
-    # ่ม logging เพื่อตรวจสอบ headers
-    IO.inspect(connect_info, label: "Connection Headers")
+    peer_data = get_connect_info(socket, :peer_data)
+    Logger.info("Peer Data: #{inspect(peer_data)}")
 
-    ip = cond do
-      # ตรรวจสอบ ngrok header ก่่อน
-      ngrok_ip = get_ngrok_ip(connect_info) ->
-        IO.puts("Using Ngrok IP: #{ngrok_ip}")
-        ngrok_ip
-
-      # ้าไม่ ngrok ให้ใช้ x-forwarded-for
-      x_forwarded_for = get_forwarded_for(connect_info) ->
-        IO.puts("Using X-Forwarded-For: #{x_forwarded_for}")
-        x_forwarded_for
-
-      # ้าไม่ม x-forwarded-for ให้ใ IP จก peer_data
-      peer_data = get_connect_info(socket, :peer_data) ->
-        ip = case peer_data do
-          %{address: {127, 0, 0, 1}} -> "localhost"
-          %{address: address} -> address |> :inet.ntoa() |> to_string()
-          _ -> "unknown"
-        end
-        IO.puts("Using Peer Data IP: #{ip}")
+    case peer_data do
+      %{address: {127, 0, 0, 1}} ->
+        "127.0.0.1"  # localhost
+      %{address: address} ->
+        ip = address |> :inet.ntoa() |> to_string()
+        Logger.info("Client IP from peer_data: #{ip}")
         ip
+      _ ->
+        forwarded_for = get_connect_info(socket, :x_forwarded_for)
+        Logger.info("X-Forwarded-For: #{inspect(forwarded_for)}")
 
-      true ->
-        IO.puts("No IP found, using unknown")
-        "unknown"
-    end
-
-    # รววสบว่า IP ที่ไดไมช่ค่ว่าเหรือ nil
-    case ip do
-      nil -> "unknown"
-      "" -> "unknown"
-      ip when is_binary(ip) -> ip
-      _ -> "unknown"
+        case forwarded_for do
+          [ip | _] ->
+            Logger.info("Client IP from x_forwarded_for: #{ip}")
+            ip
+          _ ->
+            Logger.info("Using localhost IP for development")
+            "127.0.0.1"  # ใช้ localhost แทน unknown สำหรับการพัฒนา
+        end
     end
   end
 
@@ -771,7 +767,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     else
       {:noreply,
        socket
-       |> put_flash(:error, "กรุณ��รอให้ไฟล์อัพโหลดเสร็จสมบูร์")}
+       |> put_flash(:error, "กรุณารอให้ไฟล์อัพโหลดเสร็จสมบูรณ์")}
     end
   end
 
@@ -923,7 +919,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   defp handle_upload_error(socket, error) do
     error_message = case error do
       :too_large -> "ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 20MB)"
-      :too_many_files -> "สามารถอั��โหลดได้ครั้งละ 1 ไฟล์เท่านั้น"
+      :too_many_files -> "สามารถอัพโหลดได้ครั้งละ 1 ไฟล์เท่านั้น"
       message when is_binary(message) -> message
       _ -> "เกิดข้อผิดพลาดในการอัพโหลด กรุณาลองใหม่อีกครั้ง"
     end
@@ -1110,7 +1106,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
                 {:ok, new_message}
               {:error, reason} ->
                 Logger.error("Failed to create message: #{inspect(reason)}")
-                {:error, "ไม่สามารถบันทึกข้อความได้"}
+                {:error, "ไม่สามารถบันทึกข��อความได้"}
             end
 
           {:error, reason} ->
@@ -1147,11 +1143,32 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
 
   # เพิ่ม event handlers
   def handle_event("focus_input", _, socket) do
-    {:noreply, assign(socket, input_focused: true)}
+    {:noreply, assign(socket, :input_focused, true)}
   end
 
   def handle_event("blur_input", _, socket) do
-    {:noreply, assign(socket, input_focused: false)}
+    {:noreply, assign(socket, :input_focused, false)}
+  end
+
+  def handle_event("send_message", %{"message" => message}, socket) do
+    message_params = %{
+      content: message,
+      user_name: socket.assigns.current_user,
+      user_ip: socket.assigns.client_ip,
+      room_id: socket.assigns.room.id
+    }
+
+    case Chat.create_message(message_params) do
+      {:ok, new_message} ->
+        {:noreply,
+         socket
+         |> stream_insert(:messages, new_message, at: -1)
+         |> assign(:current_message, "")}
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "ไม่สามารถส่งข้อความได้")}
+    end
   end
 
 end

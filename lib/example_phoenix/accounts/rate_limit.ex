@@ -4,17 +4,12 @@ defmodule ExamplePhoenix.Accounts.RateLimit do
   alias ExamplePhoenix.Accounts.Block
 
   @max_messages_per_minute 10  # จำนวนข้อความสูงสุดต่อนาที
-  @min_interval 1  # ระยะห่างขั้นต่ำระหว่างข้อความ (วินาที)
+  @min_interval 3  # ระยะห่างขั้นต่ำระหว่างข้อความ (วินาที)
   @initial_block_duration 120  # ระยะเวลาแบนเริ่มต้น (2 นาที)
+  @max_block_duration 86_400  # ระยะเวลาแบนสูงสุด (24 ชั่วโมง)
 
   def check_rate_limit(ip_address) do
-    # ไม่เช็ค rate limit สำหรับ localhost
-    case ip_address do
-      "localhost" -> {:ok, true}
-      "127.0.0.1" -> {:ok, true}
-      "unknown" -> {:ok, true}
-      ip -> check_rate_limit_for_ip(ip)
-    end
+    check_rate_limit_for_ip(ip_address)
   end
 
   # แยกฟังก์ชันเดิมออกมา
@@ -41,19 +36,37 @@ defmodule ExamplePhoenix.Accounts.RateLimit do
 
     cond do
       length(recent_messages) >= @max_messages_per_minute ->
-        block_duration = @initial_block_duration
+        block_duration = calculate_block_duration(ip_address)
         create_block(ip_address, block_duration)
         {:error, block_duration}
 
       length(recent_messages) > 0 and
       NaiveDateTime.diff(now, hd(recent_messages)) < @min_interval ->
-        block_duration = @initial_block_duration
+        block_duration = calculate_block_duration(ip_address)
         create_block(ip_address, block_duration)
         {:error, block_duration}
 
       true ->
         {:ok, true}
     end
+  end
+
+  defp calculate_block_duration(ip_address) do
+    case get_previous_blocks_count(ip_address) do
+      0 -> @initial_block_duration
+      count ->
+        min(@initial_block_duration * round(:math.pow(2, count)), @max_block_duration)
+    end
+  end
+
+  defp get_previous_blocks_count(ip_address) do
+    one_day_ago = NaiveDateTime.utc_now() |> NaiveDateTime.add(-86_400)
+
+    from(b in Block,
+      where: b.ip_address == ^ip_address and
+             b.inserted_at > ^one_day_ago
+    )
+    |> Repo.aggregate(:count)
   end
 
   defp get_active_block(ip_address) do

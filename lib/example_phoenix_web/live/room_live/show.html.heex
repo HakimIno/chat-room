@@ -256,12 +256,12 @@
             </svg>
           </button>
           
-          <label class="flex-none p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all cursor-pointer">
-            <.live_file_input upload={@uploads.media} class="hidden" />
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </label>
+          <label class="flex-none p-1.5 sm:p-2 text-gray-400 cursor-not-allowed opacity-50">
+  <.live_file_input upload={@uploads.media} class="hidden" disabled />
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+</label>
           <div class="flex-1 relative">
             <input
               id="chat-input"
@@ -270,20 +270,32 @@
               name="message"
               value={@current_message}
               placeholder={if(@blocked, do: format_block_time(@block_remaining_seconds), else: "พิมพ์ข้อความ...")}
-              class="w-full rounded-full pl-3 sm:pl-4 pr-10 sm:pr-12 py-2 sm:py-3 bg-gray-100 border-0 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm sm:text-base"
+              class={[
+                "w-full rounded-full pl-3 sm:pl-4 pr-10 sm:pr-12 py-2 sm:py-3 border-0 focus:ring-2 transition-all text-sm sm:text-base",
+                if(@blocked,
+                  do: "bg-red-50 text-red-900 placeholder-red-700 focus:ring-red-500",
+                  else: [
+                    "bg-gray-100 text-gray-900",
+                    if(@input_focused, do: "ring-2 ring-blue-500 bg-white", else: "focus:ring-blue-500 focus:bg-white")
+                  ]
+                )
+              ]}
               autocomplete="off"
               maxlength="500"
               disabled={@blocked}
               phx-focus="focus_input"
               phx-blur="blur_input"
-              style="position: sticky; bottom: 0;"
             />
+            
             <button 
               type="submit"
               disabled={@blocked}
               class={[
                 "absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full transition-all",
-                if(@blocked, do: "text-gray-400 cursor-not-allowed", else: "text-blue-500 hover:text-blue-600 hover:bg-gray-200")
+                if(@blocked,
+                  do: "text-red-400 cursor-not-allowed",
+                  else: "text-blue-500 hover:text-blue-600 hover:bg-gray-200"
+                )
               ]}
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">

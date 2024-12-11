@@ -5,6 +5,7 @@ defmodule ExamplePhoenix.Chat.Message do
   schema "messages" do
     field :content, :string
     field :user_name, :string
+    field :user_ip, :string
     field :media_url, :string
     field :media_type, :string
     field :content_type, :string
