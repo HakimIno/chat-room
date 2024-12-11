@@ -63,3 +63,45 @@ textarea:focus {
 .upload-preview {
   transition: all 0.3s ease;
 }
+
+/* assets/css/app.css */
+:root {
+  --app-height: 100%;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .fixed {
+    position: -webkit-sticky;
+  }
+  
+  .h-screen {
+    height: 100dvh;
+  }
+
+  body {
+    min-height: -webkit-fill-available;
+    height: var(--app-height);
+  }
+
+  #messages-container {
+    height: 100dvh;
+  }
+}
+
+/* สำหรับ iOS Safari โดยเฉพาะ */
+@media not all and (min-resolution:.001dpcm) { 
+  @supports (-webkit-appearance:none) {
+    .fixed {
+      position: -webkit-sticky !important;
+    }
+  }
+}
+
+/* ป้องกัน iOS zoom */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  textarea {
+    font-size: 16px !important;
+  }
+}

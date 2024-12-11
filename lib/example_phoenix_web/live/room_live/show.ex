@@ -103,6 +103,8 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
               button: "bg-sky-500"
             }
           })
+          |> assign(:input_focused, false)
+          |> assign(:keyboard_height, 0)
 
         {:ok,
          socket
@@ -465,7 +467,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
             {:noreply,
              socket
              |> assign(:uploading, false)
-             |> put_flash(:error, "เกิดข้อผิดพลาดที่ไม่คาดคิด")}
+             |> put_flash(:error, "เกิดข้อผิดพลาดที่ไม่ค���ดคิด")}
         end
 
       [] ->
@@ -527,7 +529,9 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     cond do
       # กรณีมีการอัพโหลดไฟล์
       length(media_entries) > 0 ->
-        media_urls =
+        [entry | _] = media_entries
+
+        if entry.done? do
           consume_uploaded_entries(socket, :media, fn %{path: path}, entry ->
             ext = Path.extname(entry.client_name)
             filename = "#{System.system_time()}-#{:crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)}#{ext}"
@@ -537,51 +541,43 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
               filename: filename,
               content_type: entry.client_type
             }) do
-              {:ok, url} -> {:ok, url}
-              {:error, reason} -> {:error, reason}
+              {:ok, url} ->
+                message_params = %{
+                  content: if(byte_size(message) > 0, do: message, else: nil),
+                  user_name: socket.assigns.current_user,
+                  room_id: socket.assigns.room.id,
+                  media_url: url,
+                  media_type: get_media_type(entry.client_type),
+                  content_type: entry.client_type,
+                  title: entry.client_name
+                }
+
+                case Chat.create_message(message_params) do
+                  {:ok, new_message} -> {:ok, new_message}
+                  {:error, _} -> {:error, "ไม่สามารถส่งข้อความได้"}
+                end
+
+              {:error, _} -> {:error, "อัพโหลดไฟล์ไม่สำเร็จ"}
             end
           end)
+          |> case do
+            [{:ok, message}] ->
+              {:noreply,
+               socket
+               |> stream_insert(:messages, message, at: -1)
+               |> assign(:current_message, "")
+               |> assign(:uploading, false)}
 
-        case Enum.split_with(media_urls, fn result ->
-          case result do
-            {:ok, _} -> true
-            {:error, _} -> false
+            [{:error, reason}] ->
+              {:noreply,
+               socket
+               |> put_flash(:error, reason)
+               |> assign(:uploading, false)}
           end
-        end) do
-          {successful, []} ->
-            # สร้างข้อความพร้อมรูปภาพทั้งหมด
-            url = successful |> List.first() |> elem(1)
-            message_params = %{
-              content: if(message == "", do: nil, else: message),
-              user_name: socket.assigns.current_user,
-              room_id: socket.assigns.room.id,
-              media_url: url,  # ส่งเป็น list ขอ URLs
-              media_type: "image",
-              content_type: List.first(media_entries).client_type
-            }
-
-            case Chat.create_message(message_params) do
-              {:ok, _message} ->
-                {:noreply,
-                 socket
-                 |> assign(:current_message, "")
-                 |> assign(:uploading, false)}
-
-              {:error, _changeset} ->
-                {:noreply,
-                 socket
-                 |> put_flash(:error, "ไม่พามารถส่งข้อความได้")
-                 |> assign(:uploading, false)}
-            end
-
-          {_, failed} ->
-            error_messages = Enum.map(failed, fn {:error, reason} ->
-              "การอัพโหลดล้มเหลว: #{inspect(reason)}"
-            end)
-            {:noreply,
-             socket
-             |> put_flash(:error, Enum.join(error_messages, ", "))
-             |> assign(:uploading, false)}
+        else
+          {:noreply,
+           socket
+           |> put_flash(:error, "กรุณารอให้ไฟล์อัพโหลดเสร็จสมบูรณ์")}
         end
 
       # กรณีมีข้อความ
@@ -591,10 +587,13 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
           user_name: socket.assigns.current_user,
           room_id: socket.assigns.room.id
         }) do
-          {:ok, _message} ->
-            {:noreply, assign(socket, :current_message, "")}
+          {:ok, new_message} ->
+            {:noreply,
+             socket
+             |> stream_insert(:messages, new_message, at: -1)
+             |> assign(:current_message, "")}
 
-          {:error, _changeset} ->
+          {:error, _} ->
             {:noreply, put_flash(socket, :error, "ไม่สามารถส่งข้อความได้")}
         end
 
@@ -621,7 +620,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
         IO.puts("Using Ngrok IP: #{ngrok_ip}")
         ngrok_ip
 
-      # ้าไม่��ี ngrok ให้ใช้ x-forwarded-for
+      # ้าไม่ ngrok ให้ใช้ x-forwarded-for
       x_forwarded_for = get_forwarded_for(connect_info) ->
         IO.puts("Using X-Forwarded-For: #{x_forwarded_for}")
         x_forwarded_for
@@ -641,7 +640,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
         "unknown"
     end
 
-    # รววจส��บว่า IP ที่ไดไมช่ค่ว่าเหรือ nil
+    # รววสบว่า IP ที่ไดไมช่ค่ว่าเหรือ nil
     case ip do
       nil -> "unknown"
       "" -> "unknown"
@@ -772,7 +771,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     else
       {:noreply,
        socket
-       |> put_flash(:error, "กรุณารอให้ไฟล์อัพโหลดเสร็จสมบูร์")}
+       |> put_flash(:error, "กรุณ��รอให้ไฟล์อัพโหลดเสร็จสมบูร์")}
     end
   end
 
@@ -924,7 +923,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   defp handle_upload_error(socket, error) do
     error_message = case error do
       :too_large -> "ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 20MB)"
-      :too_many_files -> "สามารถอัพโหลดได้ครั้งละ 1 ไฟล์เท่านั้น"
+      :too_many_files -> "สามารถอั��โหลดได้ครั้งละ 1 ไฟล์เท่านั้น"
       message when is_binary(message) -> message
       _ -> "เกิดข้อผิดพลาดในการอัพโหลด กรุณาลองใหม่อีกครั้ง"
     end
@@ -1145,4 +1144,14 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
        |> put_flash(:error, "กรุณารอให้อัพโหลดเสร็จสมบูรณ์")}
     end
   end
+
+  # เพิ่ม event handlers
+  def handle_event("focus_input", _, socket) do
+    {:noreply, assign(socket, input_focused: true)}
+  end
+
+  def handle_event("blur_input", _, socket) do
+    {:noreply, assign(socket, input_focused: false)}
+  end
+
 end

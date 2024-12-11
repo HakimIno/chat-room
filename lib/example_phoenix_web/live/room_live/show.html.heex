@@ -23,7 +23,7 @@
   </div>
 
   <!-- Messages -->
-  <div id="messages-container" class="flex-1 overflow-y-auto px-4 mt-2 overflow-x-hidden" phx-hook="ScrollChat">
+  <div id="messages-container" class="flex-1 overflow-y-auto px-4 mt-2 overflow-x-hidden mb-12" phx-hook="ScrollChat">
     <div class="max-w-5xl mx-auto">
       <div id="messages" phx-update="stream">
         <div :for={{dom_id, message} <- @streams.messages} id={dom_id}>
@@ -202,10 +202,14 @@
 
   <!-- Input -->
   <div class={[
-    "flex-none  backdrop-blur-lg bg-white/80 p-3 sm:p-1 relative z-[60] mx-auto w-full max-w-4xl transition-transform duration-300",
-    if(@show_emoji_modal, do: "-translate-y-[230px]", else: "translate-y-0")
+    "fixed bottom-0 left-0 right-0 backdrop-blur-lg bg-white/80 p-3 sm:p-1 z-[60] transition-all duration-300",
+    cond do
+      @show_emoji_modal -> "md:-translate-y-[230px] -translate-y-[230px]"
+      @input_focused -> "md:translate-y-0 -translate-y-[230px]"
+      true -> "translate-y-0"
+    end
   ]}>
-    <div class="w-full max-w-full mx-auto">
+    <div class="w-full max-w-4xl mx-auto">
       <.form
         for={%{}}
         phx-submit="submit_message"
@@ -260,6 +264,8 @@
           </label>
           <div class="flex-1 relative">
             <input
+              id="chat-input"
+              phx-hook="Keyboard"
               type="text"
               name="message"
               value={@current_message}
@@ -268,6 +274,9 @@
               autocomplete="off"
               maxlength="500"
               disabled={@blocked}
+              phx-focus="focus_input"
+              phx-blur="blur_input"
+              style="position: sticky; bottom: 0;"
             />
             <button 
               type="submit"
@@ -294,7 +303,7 @@
       <div class="absolute bottom-0 left-0 right-0 bg-white/90  p-4 animate-slide-up"
            phx-click-away="close_emoji">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold text-gray-900">เลือกอิโมจิ</h3>
+          <h3 class="text-lg font-semibold text-gray-900">เลอกอิโมจิ</h3>
           <button type="button" 
             phx-click="close_emoji"
             class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
@@ -324,7 +333,7 @@
     <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 mb-20">
       <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold">อัพโหลดไฟล์</h3>
+          <h3 class="text-lg font-semibold">อัพโหดไฟล์</h3>
           <button type="button" phx-click="cancel_upload" class="text-gray-500">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
