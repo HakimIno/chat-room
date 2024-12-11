@@ -13,8 +13,32 @@ defmodule ExamplePhoenixWeb.ChatLive.Index do
      |> assign(:show_room_modal, false)
      |> assign(:show_password_modal, false)
      |> assign(:selected_room_id, nil)
-     |> assign(:room, %Room{})}
+     |> assign(:room, %Room{})
+     |> assign(:current_category, "all")  # เพิ่มการกำหนดค่า :current_category
+     |> assign(:search_term, "")}
   end
+
+  @impl true
+def handle_event("search", %{"value" => search_term}, socket) do
+  filtered_rooms = Chat.list_rooms()
+  |> Enum.filter(fn room ->
+    String.contains?(String.downcase(room.name), String.downcase(search_term))
+  end)
+
+  {:noreply, assign(socket, rooms: filtered_rooms, search_term: search_term)}
+end
+
+@impl true
+def handle_event("filter_category", %{"category" => category}, socket) do
+  filtered_rooms = case category do
+    "all" -> Chat.list_rooms()
+    category ->
+      Chat.list_rooms()
+      |> Enum.filter(fn room -> room.category == category end)
+  end
+
+  {:noreply, assign(socket, rooms: filtered_rooms, current_category: category)}
+end
 
   @impl true
   def handle_event("show_modal", _params, socket) do

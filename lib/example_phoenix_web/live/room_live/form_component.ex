@@ -19,12 +19,16 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
                   class="text-gray-400 hover:text-gray-500 transition-colors"
                 >
                   <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
             </div>
-
             <!-- Modal Body -->
             <div class="p-6">
               <.form
@@ -48,7 +52,24 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
                     />
                   </div>
                 </div>
-
+                <!-- Category Selection -->
+                <div>
+                  <.label for={@form[:category].id}>ประเภทห้อง</.label>
+                  <div class="mt-1">
+                    <.input
+                      type="select"
+                      field={@form[:category]}
+                      options={[
+                        [key: "เลือกประเภทห้อง", value: ""],
+                        [key: "ทั่วไป", value: "general"],
+                        [key: "เกม", value: "gaming"],
+                        [key: "การศึกษา", value: "education"]
+                      ]}
+                      class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      required
+                    />
+                  </div>
+                </div>
                 <!-- Private Room Toggle -->
                 <div class="flex items-center gap-3">
                   <div class="flex items-center">
@@ -64,7 +85,6 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
                     </span>
                   </div>
                 </div>
-
                 <!-- Password Input (Conditional) -->
                 <div class={[
                   "transition-all duration-300",
@@ -81,8 +101,17 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pr-10"
                     />
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 text-gray-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                          clip-rule="evenodd"
+                        />
                       </svg>
                     </div>
                   </div>
@@ -90,7 +119,6 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
                     รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร
                   </p>
                 </div>
-
                 <!-- Action Buttons -->
                 <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                   <.button

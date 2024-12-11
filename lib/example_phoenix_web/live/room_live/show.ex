@@ -77,6 +77,32 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
           |> allow_upload(:media, @upload_options)
           |> assign(:show_gallery, false)
           |> assign(:current_image, nil)
+          |> assign(:themes, %{
+            "instagram" => %{
+              bg: "bg-gradient-to-br from-purple-50 to-pink-50",
+              badge: "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-600",
+              hover: "group-hover:text-purple-600",
+              button: "bg-gradient-to-br from-purple-500 to-pink-500"
+            },
+            "tiktok" => %{
+              bg: "bg-gradient-to-br from-gray-50 to-gray-100",
+              badge: "bg-gray-100 text-gray-600",
+              hover: "group-hover:text-gray-600",
+              button: "bg-black"
+            },
+            "facebook" => %{
+              bg: "bg-gradient-to-br from-blue-50 to-indigo-50",
+              badge: "bg-blue-100 text-blue-600",
+              hover: "group-hover:text-blue-600",
+              button: "bg-blue-600"
+            },
+            "twitter" => %{
+              bg: "bg-gradient-to-br from-sky-50 to-blue-50",
+              badge: "bg-sky-100 text-sky-600",
+              hover: "group-hover:text-sky-600",
+              button: "bg-sky-500"
+            }
+          })
 
         {:ok,
          socket
@@ -400,7 +426,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     Logger.info("Save upload triggered")
 
     case socket.assigns.uploads.media.entries do
-      [entry | _] ->
+      [_entry | _] ->
         consume_uploaded_entries(socket, :media, fn %{path: path}, entry ->
           case upload_file(path, entry) do
             {:ok, url} ->
@@ -595,12 +621,12 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
         IO.puts("Using Ngrok IP: #{ngrok_ip}")
         ngrok_ip
 
-      # ้าไม่มี ngrok ให้ใช้ x-forwarded-for
+      # ้าไม่��ี ngrok ให้ใช้ x-forwarded-for
       x_forwarded_for = get_forwarded_for(connect_info) ->
         IO.puts("Using X-Forwarded-For: #{x_forwarded_for}")
         x_forwarded_for
 
-      # ้าไม่มี x-forwarded-for ให้ใ IP จก peer_data
+      # ้าไม่ม x-forwarded-for ให้ใ IP จก peer_data
       peer_data = get_connect_info(socket, :peer_data) ->
         ip = case peer_data do
           %{address: {127, 0, 0, 1}} -> "localhost"
@@ -615,7 +641,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
         "unknown"
     end
 
-    # รววจสอบว่า IP ที่ไดไมช่ค่ว่าเหรือ nil
+    # รววจส��บว่า IP ที่ไดไมช่ค่ว่าเหรือ nil
     case ip do
       nil -> "unknown"
       "" -> "unknown"
@@ -970,7 +996,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     )}
   end
 
-  # เพิ่ม function ใหม่สำหรับตร���จสอบ YouTube URL
+  # เพิ่ม function ใหม่สำหรับตรจสอบ YouTube URL
   defp is_youtube_url?(content) do
     youtube_regex = ~r/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
     String.match?(content, youtube_regex)

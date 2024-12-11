@@ -9,13 +9,14 @@ defmodule ExamplePhoenix.Chat.Room do
     field :creator_id, :string
     field :image_url, :string
     field :last_active_users, {:array, :map}, default: []
+    field :category, :string
     timestamps()
   end
 
   def changeset(room, attrs) do
     room
-    |> cast(attrs, [:name, :is_private, :password, :creator_id, :image_url])
-    |> validate_required([:name, :creator_id])
+    |> cast(attrs, [:name, :is_private, :password, :creator_id, :image_url,:category])
+    |> validate_required([:name, :creator_id, :category])
     |> validate_password_if_private()
   end
 
