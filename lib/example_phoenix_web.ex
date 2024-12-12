@@ -54,6 +54,8 @@ defmodule ExamplePhoenixWeb do
       use Phoenix.LiveView,
         layout: {ExamplePhoenixWeb.Layouts, :app}
 
+      import ExamplePhoenixWeb.Components.Themes
+
       unquote(html_helpers())
     end
   end
