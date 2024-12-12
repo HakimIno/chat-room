@@ -39,7 +39,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   @impl true
   def mount(%{"id" => id}, session, socket) do
     if connected?(socket) do
-      # Subscribe to room topic
+      # Subscribe to room channel
       Phoenix.PubSub.subscribe(ExamplePhoenix.PubSub, "room:#{id}")
     end
 
@@ -120,27 +120,51 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   end
 
   @impl true
-  def handle_event("submit_message", %{"message" => content}, socket) when content != "" do
-    message_params = %{
-      "content" => content,
-      "user_name" => socket.assigns.current_user,
-      "user_avatar" => socket.assigns.current_user_avatar,
-      "room_id" => socket.assigns.room.id
-    }
+  def handle_event("submit_message", params, socket) do
+    # แยก URL จาก params
+    content = case params do
+      %{"message" => message} -> message
+      %{"value" => value} ->
+        URI.decode_query(value) |> Map.get("message")
+      _ -> nil
+    end
 
-    case Chat.create_message(message_params) do
-      {:ok, message} ->
-        # Broadcast the new message to all subscribers
-        Phoenix.PubSub.broadcast(
-          ExamplePhoenix.PubSub,
-          "room:#{socket.assigns.room.id}",
-          {:new_message, message}
-        )
+    if content do
+      # เพิ่มการตรวจสอบ URL และดึงข้อมูล metadata
+      message_params = case parse_url(content) do
+        {:ok, metadata} ->
+          %{
+            "content" => content,
+            "user_name" => socket.assigns.current_user,
+            "user_avatar" => socket.assigns.current_user_avatar,
+            "room_id" => socket.assigns.room.id,
+            "media_type" => metadata.type,
+            "media_url" => metadata.thumbnail,
+            "title" => metadata.title
+          }
+        :error ->
+          %{
+            "content" => content,
+            "user_name" => socket.assigns.current_user,
+            "user_avatar" => socket.assigns.current_user_avatar,
+            "room_id" => socket.assigns.room.id
+          }
+      end
 
-        {:noreply, assign(socket, :current_message, "")}
-
-      {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "ไม่สามารถส่งข้อความได้")}
+      case Chat.create_message(message_params) do
+        {:ok, message} ->
+          # Broadcast message to all subscribers
+          Phoenix.PubSub.broadcast(
+            ExamplePhoenix.PubSub,
+            "room:#{socket.assigns.room.id}",
+            {:new_message, message}
+          )
+          {:noreply, socket |> assign(:current_message, "")}
+        {:error, _changeset} ->
+          {:noreply, socket |> put_flash(:error, "ไม่สามารถส่งข้อความได้")}
+      end
+    else
+      {:noreply, socket |> put_flash(:error, "ข้อความไม่ถูกต้อง")}
     end
   end
 
@@ -304,7 +328,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
          |> assign(:current_message, "")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "ไม่สามารถส่งข้อความได้")}
+        {:noreply, put_flash(socket, :error, "ไม��สามารถส่งข้อความได้")}
     end
   end
 
@@ -778,7 +802,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   defp handle_media_message(socket, _message, _) do
     {:noreply,
      socket
-     |> put_flash(:error, "ไม่รอมอัพพโหดไฟล์ห๗ี่อัพโหลด")
+     |> put_flash(:error, "ไม่รอมอัพพหดไฟล์ห๗ี่อัพโหลด")
      |> assign(:uploading, false)}
   end
 
@@ -922,7 +946,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   # เพิ่มการจัดการ error ที่ดีขึ้น
   defp handle_upload_error(socket, error) do
     error_message = case error do
-      :too_large -> "ไฟล��มีขนาดใหญ่เกินไป (สูงสุด 20MB)"
+      :too_large -> "ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 20MB)"
       :too_many_files -> "สามารถอัพโหลดได้ครั้งละ 1 ไฟล์เท่านั้น"
       message when is_binary(message) -> message
       _ -> "เกิดข้อผิดพลาดในการอัพโหลด กรุณาลองใหม่อีกครั้ง"
@@ -995,7 +1019,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
     )}
   end
 
-  # เพิ่ม function ใหม่สำหรับตรจสอบ YouTube URL
+  # เพิ่ม function ใม่สำหรับตรจสอบ YouTube URL
   defp is_youtube_url?(content) do
     youtube_regex = ~r/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
     String.match?(content, youtube_regex)
@@ -1003,11 +1027,16 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
 
   # เพิ่ม function สำหรับดึง video ID
   defp extract_youtube_id(url) do
-    youtube_regex = ~r/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
-    case Regex.run(youtube_regex, url) do
+    case Regex.run(~r/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/, url) do
       [_, video_id] -> {:ok, video_id}
       _ -> :error
     end
+  end
+
+  # อาจจะใช้ YouTube API เพื่อดึงชื่อวิดีโอ (ต้องมี API key)
+  defp get_youtube_title(_video_id) do
+    # TODO: Implement YouTube API call
+    "YouTube Video" # ค่าเริ่มต้น
   end
 
   # ปรับปรุงฟังก์ชัน get_url_metadata
@@ -1168,6 +1197,53 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
       {:error, _changeset} ->
         {:noreply, socket |> put_flash(:error, "ไม่สามารถส่งข้อความได้")}
     end
+  end
+
+  # เพิ��มฟังก์ชันสำหรับแยกประเภท URL และดึงข้อมูล
+  defp parse_url(url) do
+    cond do
+      youtube_id = extract_youtube_id(url) ->
+        {:ok, %{
+          type: "youtube",
+          thumbnail: "https://img.youtube.com/vi/#{youtube_id}/maxresdefault.jpg",
+          title: get_youtube_title(youtube_id)
+        }}
+
+      # เพิ่มเงื่อนไขสำหรับ platform อื่นๆ
+      String.contains?(url, "instagram.com") ->
+        {:ok, %{type: "instagram", thumbnail: nil, title: nil}}
+
+      String.contains?(url, "tiktok.com") ->
+        {:ok, %{type: "tiktok", thumbnail: nil, title: nil}}
+
+      String.contains?(url, "facebook.com") ->
+        {:ok, %{type: "facebook", thumbnail: nil, title: nil}}
+
+      String.contains?(url, "twitter.com") ->
+        {:ok, %{type: "twitter", thumbnail: nil, title: nil}}
+
+      true -> :error
+    end
+  end
+
+  defp extract_youtube_id(url) do
+    cond do
+      # Full URL: https://www.youtube.com/watch?v=VIDEO_ID
+      Regex.run(~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/, url) ->
+        Regex.run(~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/, url) |> List.last()
+
+      # Short URL: https://youtu.be/VIDEO_ID
+      Regex.run(~r/youtu\.be\/([^&\s]+)/, url) ->
+        Regex.run(~r/youtu\.be\/([^&\s]+)/, url) |> List.last()
+
+      true -> nil
+    end
+  end
+
+  # อาจจะใช้ YouTube API เพื่อดึงชื่อวิดีโอ (ต้องมี API key)
+  defp get_youtube_title(_video_id) do
+    # TODO: Implement YouTube API call
+    "YouTube Video" # ค่าเริ่มต้น
   end
 
 end
