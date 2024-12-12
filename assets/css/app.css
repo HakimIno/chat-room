@@ -116,3 +116,57 @@ textarea:focus {
   background-size: 200% 200%;
   animation: gradient 3s ease infinite;
 }
+
+.qr-code-section {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.qr-code {
+  margin-top: 10px;
+  padding: 10px;
+  background: white;
+  display: inline-block;
+}
+
+.password-form {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 20px;
+  text-align: center;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.password-form input {
+  width: 100%;
+  padding: 8px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.password-form .error {
+  color: red;
+  margin-top: 10px;
+}
+
+.qr-code {
+  filter: drop-shadow(0px 2px 8px rgba(0,0,0,0.1));
+}
+
+.qr-wrapper {
+  animation: fade-scale-in 0.3s ease-out;
+}
+
+@keyframes fade-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
