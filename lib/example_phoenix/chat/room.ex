@@ -4,19 +4,22 @@ defmodule ExamplePhoenix.Chat.Room do
 
   schema "rooms" do
     field :name, :string
+    field :category, :string
     field :is_private, :boolean, default: false
     field :password, :string
+    field :theme, :string, default: "modern"
     field :creator_id, :string
-    field :image_url, :string
-    field :last_active_users, {:array, :map}, default: []
-    field :category, :string
-    timestamps()
+    field :last_active_users, {:array, :map}, virtual: true, default: []
+
+    timestamps(type: :utc_datetime)
   end
 
+  @doc false
   def changeset(room, attrs) do
     room
-    |> cast(attrs, [:name, :is_private, :password, :creator_id, :image_url,:category])
-    |> validate_required([:name, :creator_id, :category])
+    |> cast(attrs, [:name, :category, :is_private, :password, :theme, :creator_id])
+    |> validate_required([:name, :category, :theme, :creator_id])
+    |> validate_inclusion(:theme, ["modern", "minimal", "nature"])
     |> validate_password_if_private()
   end
 

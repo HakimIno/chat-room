@@ -7,11 +7,16 @@ defmodule ExamplePhoenixWeb.RoomLive.Index do
 
   @impl true
   def mount(_params, session, socket) do
+    rooms = Chat.list_rooms()
+    rooms_with_users = Enum.map(rooms, fn room ->
+      %{room | last_active_users: []}
+    end)
+
     {:ok,
      socket
      |> assign(:current_user, session["user_name"])
      |> assign(:current_user_avatar, session["user_avatar"])
-     |> assign(:rooms, Chat.list_rooms())
+     |> assign(:rooms, rooms_with_users)
      |> assign(:show_room_modal, false)
      |> assign(:show_password_modal, false)
      |> assign(:selected_room_id, nil)

@@ -1,9 +1,30 @@
-<div class="fixed inset-0 flex flex-col bg-gradient-to-b from-gray-50 to-white w-screen h-screen">
+<div class={[
+  "fixed inset-0 flex flex-col w-screen h-screen",
+  case @room.theme do
+    "modern" -> "bg-gradient-to-br from-blue-100 to-indigo-100"
+    "minimal" -> "bg-gradient-to-br from-gray-100 to-gray-100"
+    "nature" -> "bg-gradient-to-br from-green-100 to-emerald-100"
+  end
+]}>
   <!-- Header -->
-  <div class="flex-none border-b backdrop-blur-lg bg-white/80 px-3 sm:px-4 py-3 sm:py-4">
+  <div class={[
+    "flex-none border-b backdrop-blur-lg px-3 sm:px-4 py-3 sm:py-4",
+    case @room.theme do
+      "modern" -> "bg-white/80"
+      "minimal" -> "bg-white/90"
+      "nature" -> "bg-white/85"
+    end
+  ]}>
     <div class="max-w-4xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-2 sm:gap-3">
-        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center">
+        <div class={[
+          "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center",
+          case @room.theme do
+            "modern" -> "bg-gradient-to-r from-blue-500 to-indigo-500"
+            "minimal" -> "bg-gradient-to-r from-gray-600 to-gray-700"
+            "nature" -> "bg-gradient-to-r from-green-500 to-emerald-500"
+          end
+        ]}>
           <span class="text-white font-semibold text-base sm:text-lg">
             <%= String.first(@room.name) %>
           </span>
@@ -235,7 +256,19 @@
               <% true -> %>
                 <div class={[
                   "px-4 py-2 rounded-2xl max-w-[70%]",
-                  if(message.user_name == @current_user, do: "bg-blue-500 text-white", else: "bg-gray-100 text-gray-900")
+                  if message.user_name == @current_user do
+                    case @room.theme do
+                      "modern" -> "bg-gradient-to-br from-blue-500 to-indigo-500 text-white"
+                      "minimal" -> "bg-gradient-to-br from-gray-500 to-gray-600 text-white"
+                      "nature" -> "bg-gradient-to-br from-green-500 to-emerald-600 text-white"
+                    end
+                  else
+                  case @room.theme do
+                       "modern" -> "bg-white/50 backdrop-blur-sm from-blue-50 to-indigo-50 shadow-sm border border-gray-100/50 text-gray-900"
+  "minimal" -> "bg-white/50 backdrop-blur-sm from-gray-50 to-gray-100 shadow-sm text-gray-900"
+  "nature" -> "bg-white/50 backdrop-blur-sm from-green-50 to-emerald-100 shadow-sm text-gray-900"
+                    end
+                  end
                 ]}>
                   <%= message.content %>
                 </div>
@@ -349,7 +382,11 @@
                 "absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full transition-all",
                 if(@blocked,
                   do: "text-red-400 cursor-not-allowed",
-                  else: "text-blue-500 hover:text-blue-600 hover:bg-gray-200"
+                  else: case @room.theme do
+                    "modern" -> "text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                    "minimal" -> "text-gray-500 hover:text-gray-600 hover:bg-gray-50"
+                    "nature" -> "text-green-500 hover:text-green-600 hover:bg-green-50"
+                  end
                 )
               ]}
             >

@@ -2,6 +2,30 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
   use ExamplePhoenixWeb, :live_component
   alias ExamplePhoenix.Chat
 
+  @themes [
+    %{
+      id: "modern",
+      name: "Modern",
+      description: "ดีไซน์ทันสมัย สีสันสดใส",
+      preview_image: "/images/themes/modern.png",
+      colors: "from-blue-50 to-indigo-100"
+    },
+    %{
+      id: "minimal",
+      name: "Minimal",
+      description: "เรียบง่าย สบายตา",
+      preview_image: "/images/themes/minimal.png",
+      colors: "from-gray-50 to-gray-100"
+    },
+    %{
+      id: "nature",
+      name: "Nature",
+      description: "โทนสีธรรมชาติ สบายตา",
+      preview_image: "/images/themes/nature.png",
+      colors: "from-green-50 to-emerald-100"
+    }
+  ]
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -68,6 +92,56 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                       required
                     />
+                  </div>
+                </div>
+                <!-- Theme Selection -->
+                <div class="space-y-3">
+                  <.label>เลือกธีมห้องแชท</.label>
+                  <div class="grid grid-cols-3 gap-4">
+                    <%= for theme <- @themes do %>
+                      <div class="relative">
+                        <input
+                          type="radio"
+                          name="room[theme]"
+                          id={"theme-#{theme.id}"}
+                          value={theme.id}
+                          class="peer hidden"
+                          checked={@form[:theme].value == theme.id}
+                        />
+                        <label
+                          for={"theme-#{theme.id}"}
+                          class="block cursor-pointer rounded-xl border-2 border-gray-200 p-2 hover:border-indigo-500 peer-checked:border-indigo-500 peer-checked:ring-2 peer-checked:ring-indigo-500 transition-all"
+                        >
+                          <!-- Theme Preview -->
+                          <div class={"h-24 rounded-lg bg-gradient-to-br #{theme.colors} mb-2 overflow-hidden"}>
+                            <img
+                              src={theme.preview_image}
+                              alt={"Theme #{theme.name}"}
+                              class="w-full h-full object-cover mix-blend-overlay opacity-90"
+                            />
+                          </div>
+
+                          <!-- Theme Info -->
+                          <div class="text-center">
+                            <h3 class="font-medium text-gray-900">
+                              <%= theme.name %>
+                            </h3>
+                            <p class="text-xs text-gray-500 mt-1">
+                              <%= theme.description %>
+                            </p>
+                          </div>
+
+                          <!-- Selected Indicator -->
+                          <div class="absolute -top-2 -right-2 hidden peer-checked:block">
+                            <div class="bg-indigo-500 text-white rounded-full p-1">
+                              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                              </svg>
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+                    <% end %>
                   </div>
                 </div>
                 <!-- Private Room Toggle -->
@@ -153,6 +227,7 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:themes, @themes)
      |> assign(:show_password_field, room.is_private)
      |> assign_form(changeset)}
   end
