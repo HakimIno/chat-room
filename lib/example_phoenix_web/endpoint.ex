@@ -30,7 +30,7 @@ defmodule ExamplePhoenixWeb.Endpoint do
     at: "/",
     from: :example_phoenix,
     gzip: false,
-    only: ~w(assets fonts images favicon.ico robots.txt uploads)
+    only: ExamplePhoenixWeb.static_paths()
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
@@ -56,5 +56,16 @@ defmodule ExamplePhoenixWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
+
+  # Add security headers
+  plug ExamplePhoenixWeb.Plugs.SecurityHeaders
+
+  # CORS configuration
+  plug CORSPlug,
+    origin: ["http://localhost:4000", "https://lyra.fly.dev"],  # เพิ่ม domain ที่อนุญาตตามที่ต้องการ
+    max_age: 86400,  # 24 hours
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    headers: ["Authorization", "Content-Type", "Accept", "Origin", "User-Agent"]
+
   plug ExamplePhoenixWeb.Router
 end

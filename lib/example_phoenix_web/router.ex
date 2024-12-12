@@ -34,6 +34,11 @@ defmodule ExamplePhoenixWeb.Router do
     plug :put_secure_browser_headers, @security_headers
   end
 
+  pipeline :api do
+    plug :accepts, ["json"]
+    plug ExamplePhoenixWeb.Plugs.RateLimiter
+  end
+
   pipeline :auth do
     plug ExamplePhoenixWeb.Plugs.Auth
   end

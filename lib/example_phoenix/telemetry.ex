@@ -1,4 +1,6 @@
 defmodule ExamplePhoenix.Telemetry do
+  require Logger
+
   def handle_event([:chat, :url_metadata, :fetch], measurements, metadata, _config) do
     # Log metrics to your monitoring system
     Logger.info("URL metadata fetch took #{measurements.duration}ms", metadata)

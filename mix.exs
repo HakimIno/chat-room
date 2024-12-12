@@ -66,7 +66,12 @@ defmodule ExamplePhoenix.MixProject do
       {:mime, "~> 2.0"},
       {:dotenv, "~> 3.0.0"},
       {:uuid, "~> 1.1"},
-      {:certifi, "~> 2.12"}
+      {:certifi, "~> 2.12"},
+      {:hammer, "~> 6.1"},
+      {:cors_plug, "~> 3.0"},
+      {:floki, "~> 0.36.0"},
+      {:cachex, "~> 3.6"},
+      {:oban, "~> 2.15"}
     ]
   end
 

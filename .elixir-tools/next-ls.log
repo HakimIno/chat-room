@@ -1,0 +1,55 @@
+
+10:58:16.431 [info] Loading 154 CA(s) from :otp store
+
+10:58:16.911 [notice] Application next_ls exited: NextLS.Application.start(:normal, []) returned an error: shutdown: failed to start child: NextLS.LSPSupervisor
+    ** (EXIT) shutdown: failed to start child: NextLS
+        ** (EXIT) an exception was raised:
+            ** (ErlangError) Erlang error: :enoent
+                (elixir 1.17.2) lib/system.ex:1114: System.cmd("elixir", ["--short-version"], [])
+                (next_ls 0.23.2) lib/next_ls.ex:47: NextLS.init/2
+                (gen_lsp 0.10.0) lib/gen_lsp.ex:201: GenLSP.init/1
+                (stdlib 6.0) proc_lib.erl:329: :proc_lib.init_p_do_apply/3
+
+10:58:19.232 [info] Loading 154 CA(s) from :otp store
+
+10:58:19.274 [notice] Application next_ls exited: NextLS.Application.start(:normal, []) returned an error: shutdown: failed to start child: NextLS.LSPSupervisor
+    ** (EXIT) shutdown: failed to start child: NextLS
+        ** (EXIT) an exception was raised:
+            ** (ErlangError) Erlang error: :enoent
+                (elixir 1.17.2) lib/system.ex:1114: System.cmd("elixir", ["--short-version"], [])
+                (next_ls 0.23.2) lib/next_ls.ex:47: NextLS.init/2
+                (gen_lsp 0.10.0) lib/gen_lsp.ex:201: GenLSP.init/1
+                (stdlib 6.0) proc_lib.erl:329: :proc_lib.init_p_do_apply/3
+
+10:58:21.593 [info] Loading 154 CA(s) from :otp store
+
+10:58:21.635 [notice] Application next_ls exited: NextLS.Application.start(:normal, []) returned an error: shutdown: failed to start child: NextLS.LSPSupervisor
+    ** (EXIT) shutdown: failed to start child: NextLS
+        ** (EXIT) an exception was raised:
+            ** (ErlangError) Erlang error: :enoent
+                (elixir 1.17.2) lib/system.ex:1114: System.cmd("elixir", ["--short-version"], [])
+                (next_ls 0.23.2) lib/next_ls.ex:47: NextLS.init/2
+                (gen_lsp 0.10.0) lib/gen_lsp.ex:201: GenLSP.init/1
+                (stdlib 6.0) proc_lib.erl:329: :proc_lib.init_p_do_apply/3
+
+10:58:23.908 [info] Loading 154 CA(s) from :otp store
+
+10:58:23.943 [notice] Application next_ls exited: NextLS.Application.start(:normal, []) returned an error: shutdown: failed to start child: NextLS.LSPSupervisor
+    ** (EXIT) shutdown: failed to start child: NextLS
+        ** (EXIT) an exception was raised:
+            ** (ErlangError) Erlang error: :enoent
+                (elixir 1.17.2) lib/system.ex:1114: System.cmd("elixir", ["--short-version"], [])
+                (next_ls 0.23.2) lib/next_ls.ex:47: NextLS.init/2
+                (gen_lsp 0.10.0) lib/gen_lsp.ex:201: GenLSP.init/1
+                (stdlib 6.0) proc_lib.erl:329: :proc_lib.init_p_do_apply/3
+
+10:58:26.183 [info] Loading 154 CA(s) from :otp store
+
+10:58:26.213 [notice] Application next_ls exited: NextLS.Application.start(:normal, []) returned an error: shutdown: failed to start child: NextLS.LSPSupervisor
+    ** (EXIT) shutdown: failed to start child: NextLS
+        ** (EXIT) an exception was raised:
+            ** (ErlangError) Erlang error: :enoent
+                (elixir 1.17.2) lib/system.ex:1114: System.cmd("elixir", ["--short-version"], [])
+                (next_ls 0.23.2) lib/next_ls.ex:47: NextLS.init/2
+                (gen_lsp 0.10.0) lib/gen_lsp.ex:201: GenLSP.init/1
+                (stdlib 6.0) proc_lib.erl:329: :proc_lib.init_p_do_apply/3

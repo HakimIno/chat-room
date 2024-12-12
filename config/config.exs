@@ -42,6 +42,19 @@ config :esbuild,
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]
 
+# Configure Hammer for rate limiting
+config :hammer,
+  backend: {Hammer.Backend.ETS, [
+    expiry_ms: 60_000 * 60 * 4,    # 4 hours
+    cleanup_interval_ms: 60_000 * 10  # 10 minutes
+  ]}
+
+# Configure Oban
+config :example_phoenix, Oban,
+  repo: ExamplePhoenix.Repo,
+  plugins: [Oban.Plugins.Pruner],
+  queues: [default: 10]
+
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "3.4.3",
