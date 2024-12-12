@@ -1,46 +1,47 @@
-# lib/example_phoenix_web/live/chat_live/index.ex
-defmodule ExamplePhoenixWeb.ChatLive.Index do
+# lib/example_phoenix_web/live/room_live/index.ex
+defmodule ExamplePhoenixWeb.RoomLive.Index do
   use ExamplePhoenixWeb, :live_view
   alias ExamplePhoenix.Chat
   alias ExamplePhoenix.Chat.Room
+  import Phoenix.HTML.Link
 
   @impl true
   def mount(_params, session, socket) do
     {:ok,
      socket
      |> assign(:current_user, session["user_name"])
+     |> assign(:current_user_avatar, session["user_avatar"])
      |> assign(:rooms, Chat.list_rooms())
      |> assign(:show_room_modal, false)
      |> assign(:show_password_modal, false)
      |> assign(:selected_room_id, nil)
      |> assign(:room, %Room{})
-     |> assign(:current_category, "all")  # เพิ่มการกำหนดค่า :current_category
+     |> assign(:current_category, "all")
      |> assign(:search_term, "")}
   end
 
+  # Group all handle_event/3 functions together
   @impl true
-def handle_event("search", %{"value" => search_term}, socket) do
-  filtered_rooms = Chat.list_rooms()
-  |> Enum.filter(fn room ->
-    String.contains?(String.downcase(room.name), String.downcase(search_term))
-  end)
+  def handle_event("search", %{"value" => search_term}, socket) do
+    filtered_rooms = Chat.list_rooms()
+    |> Enum.filter(fn room ->
+      String.contains?(String.downcase(room.name), String.downcase(search_term))
+    end)
 
-  {:noreply, assign(socket, rooms: filtered_rooms, search_term: search_term)}
-end
-
-@impl true
-def handle_event("filter_category", %{"category" => category}, socket) do
-  filtered_rooms = case category do
-    "all" -> Chat.list_rooms()
-    category ->
-      Chat.list_rooms()
-      |> Enum.filter(fn room -> room.category == category end)
+    {:noreply, assign(socket, rooms: filtered_rooms, search_term: search_term)}
   end
 
-  {:noreply, assign(socket, rooms: filtered_rooms, current_category: category)}
-end
+  def handle_event("filter_category", %{"category" => category}, socket) do
+    filtered_rooms = case category do
+      "all" -> Chat.list_rooms()
+      category ->
+        Chat.list_rooms()
+        |> Enum.filter(fn room -> room.category == category end)
+    end
 
-  @impl true
+    {:noreply, assign(socket, rooms: filtered_rooms, current_category: category)}
+  end
+
   def handle_event("show_modal", _params, socket) do
     {:noreply,
      socket
@@ -48,23 +49,6 @@ end
      |> assign(:show_room_modal, true)}
   end
 
-  @impl true
-  def handle_info(:close_modal, socket) do
-    {:noreply,
-     socket
-     |> assign(:show_room_modal, false)}
-  end
-
-  @impl true
-  def handle_info({:close_modal, :created}, socket) do
-    {:noreply,
-     socket
-     |> put_flash(:info, "สร้างห้องสำเร็จ")
-     |> assign(:show_room_modal, false)
-     |> assign(:rooms, Chat.list_rooms())}
-  end
-
-  @impl true
   def handle_event("show_password_modal", %{"room-id" => room_id}, socket) do
     {:noreply,
      socket
@@ -72,7 +56,6 @@ end
      |> assign(:selected_room_id, room_id)}
   end
 
-  @impl true
   def handle_event("close_password_modal", _params, socket) do
     {:noreply,
      socket
@@ -80,8 +63,7 @@ end
      |> assign(:selected_room_id, nil)}
   end
 
-  @impl true
-  def handle_event("join_private_room", %{"id" => room_id, "password" => password}, socket) do
+  def handle_event("join_private_room", %{"room_id" => room_id, "password" => password}, socket) do
     case Chat.join_room(room_id, password) do
       {:ok, _room} ->
         {:noreply,
@@ -91,12 +73,11 @@ end
       {:error, :invalid_password} ->
         {:noreply,
          socket
-         |> put_flash(:error, "รหัสผ่านไม่ถูกต้อง")
+         |> put_flash(:error, "รหัผ่านไม่ถูกต้อง")
          |> assign(:show_password_modal, true)}
     end
   end
 
-  @impl true
   def handle_event("validate", %{"room" => room_params}, socket) do
     # Debug log
     IO.inspect(room_params, label: "Received room params")
@@ -135,7 +116,6 @@ end
     end
   end
 
-  @impl true
   def handle_event("save", %{"room" => room_params}, socket) do
     # Debug log
     IO.inspect(room_params, label: "Received room params")
@@ -172,6 +152,22 @@ end
          |> put_flash(:error, error_to_string(changeset))
          |> assign(:show_room_modal, true)}
     end
+  end
+
+  @impl true
+  def handle_info(:close_modal, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_room_modal, false)}
+  end
+
+  @impl true
+  def handle_info({:close_modal, :created}, socket) do
+    {:noreply,
+     socket
+     |> put_flash(:info, "สร้างห้องสำเร็จ")
+     |> assign(:show_room_modal, false)
+     |> assign(:rooms, Chat.list_rooms())}
   end
 
   defp error_to_string(changeset) do

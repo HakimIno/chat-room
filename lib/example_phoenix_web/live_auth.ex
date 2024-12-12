@@ -3,10 +3,11 @@ defmodule ExamplePhoenixWeb.LiveAuth do
   import Phoenix.LiveView
 
   def on_mount(:user_required, _params, session, socket) do
-    IO.inspect(session, label: "LiveAuth Session")
-
     if user_name = session["user_name"] do
-      {:cont, assign(socket, current_user: user_name)}
+      {:cont,
+       socket
+       |> assign(:current_user, user_name)
+       |> assign(:current_user_avatar, session["user_avatar"])}
     else
       {:halt, redirect(socket, to: "/auth")}
     end

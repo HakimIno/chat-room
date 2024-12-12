@@ -58,9 +58,8 @@ defmodule ExamplePhoenixWeb.Router do
     live_session :authenticated,
       on_mount: [{ExamplePhoenixWeb.LiveAuth, :user_required}],
       session: {ExamplePhoenixWeb.Router, :get_session, []} do
-      live "/chat", ChatLive.Index, :index
-      live "/chat/new", ChatLive.Index, :new
-      live "/chat/:id", ChatLive.Show, :show
+      live "/chat", RoomLive.Index, :index
+      live "/chat/:id", RoomLive.Show, :show
     end
   end
 

@@ -1,7 +1,8 @@
 # lib/example_phoenix_web/live/room_live/show.ex
-defmodule ExamplePhoenixWeb.ChatLive.Show do
+defmodule ExamplePhoenixWeb.RoomLive.Show do
   use ExamplePhoenixWeb, :live_view
   alias ExamplePhoenix.Chat
+  alias ExamplePhoenix.Accounts.RateLimit
   import Phoenix.Component
   import Phoenix.HTML.Link
   require Logger
@@ -37,6 +38,11 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
+    if connected?(socket) do
+      # Subscribe to room topic
+      Phoenix.PubSub.subscribe(ExamplePhoenix.PubSub, "room:#{id}")
+    end
+
     case Chat.get_room(id) do
       {:ok, room} ->
         if connected?(socket) do
@@ -114,32 +120,33 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   end
 
   @impl true
-  def handle_event("submit_message", %{"message" => url}, socket) when is_binary(url) and url != "" do
-    cond do
-      # YouTube
-      String.match?(url, ~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/) ->
-        handle_youtube_url(socket, url)
+  def handle_event("submit_message", %{"message" => content}, socket) when content != "" do
+    message_params = %{
+      "content" => content,
+      "user_name" => socket.assigns.current_user,
+      "user_avatar" => socket.assigns.current_user_avatar,
+      "room_id" => socket.assigns.room.id
+    }
 
-      # Instagram
-      String.match?(url, ~r/instagram\.com/) ->
-        handle_instagram_url(socket, url)
+    case Chat.create_message(message_params) do
+      {:ok, message} ->
+        # Broadcast the new message to all subscribers
+        Phoenix.PubSub.broadcast(
+          ExamplePhoenix.PubSub,
+          "room:#{socket.assigns.room.id}",
+          {:new_message, message}
+        )
 
-      # TikTok
-      String.match?(url, ~r/tiktok\.com/) ->
-        handle_tiktok_url(socket, url)
+        {:noreply, assign(socket, :current_message, "")}
 
-      # Facebook
-      String.match?(url, ~r/facebook\.com|fb\.com/) ->
-        handle_facebook_url(socket, url)
-
-      # Twitter/X
-      String.match?(url, ~r/twitter\.com|x\.com/) ->
-        handle_twitter_url(socket, url)
-
-      # ข้อความปกติ
-      true ->
-        create_regular_message(socket, url)
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "ไม่สามารถส่งข้อความได้")}
     end
+  end
+
+  # กรณีข้อความว่าง
+  def handle_event("submit_message", _params, socket) do
+    {:noreply, socket}
   end
 
   defp handle_youtube_url(socket, url) do
@@ -637,7 +644,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
             ip
           _ ->
             Logger.info("Using localhost IP for development")
-            "127.0.0.1"  # ใช้ localhost แทน unknown ���ำหรับการพัฒนา
+            "127.0.0.1"  # ใช้ localhost แทน unknown ำหรับการพัฒนา
         end
     end
   end
@@ -915,7 +922,7 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
   # เพิ่มการจัดการ error ที่ดีขึ้น
   defp handle_upload_error(socket, error) do
     error_message = case error do
-      :too_large -> "ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 20MB)"
+      :too_large -> "ไฟล��มีขนาดใหญ่เกินไป (สูงสุด 20MB)"
       :too_many_files -> "สามารถอัพโหลดได้ครั้งละ 1 ไฟล์เท่านั้น"
       message when is_binary(message) -> message
       _ -> "เกิดข้อผิดพลาดในการอัพโหลด กรุณาลองใหม่อีกครั้ง"
@@ -1147,24 +1154,19 @@ defmodule ExamplePhoenixWeb.ChatLive.Show do
     {:noreply, assign(socket, :input_focused, false)}
   end
 
-  def handle_event("send_message", %{"message" => message}, socket) do
+  def handle_event("send_message", %{"content" => content}, socket) do
     message_params = %{
-      content: message,
-      user_name: socket.assigns.current_user,
-      user_ip: socket.assigns.client_ip,
-      room_id: socket.assigns.room.id
+      "content" => content,
+      "user_name" => socket.assigns.current_user,
+      "user_avatar" => socket.assigns.current_user_avatar,
+      "room_id" => socket.assigns.room.id
     }
 
     case Chat.create_message(message_params) do
-      {:ok, new_message} ->
-        {:noreply,
-         socket
-         |> stream_insert(:messages, new_message, at: -1)
-         |> assign(:current_message, "")}
+      {:ok, _message} ->
+        {:noreply, socket |> assign(:current_message, "")}
       {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "ไม่สามารถส่งข้อความได้")}
+        {:noreply, socket |> put_flash(:error, "ไม่สามารถส่งข้อความได้")}
     end
   end
 

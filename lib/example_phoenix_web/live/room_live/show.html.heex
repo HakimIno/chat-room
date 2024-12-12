@@ -31,6 +31,11 @@
             "flex items-end gap-2 mb-4",
             if(message.user_name == @current_user, do: "flex-row-reverse", else: "flex-row")
           ]}>
+            <!-- Avatar -->
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-lg bg-gray-100">
+              <%= message.user_avatar %>
+            </div>
+
             <%= cond do %>
               <% message.media_type == "youtube" -> %>
                 <div class="rounded-2xl overflow-hidden  max-w-[250px] md:max-w-[350px] border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 bg-gradient-to-br from-red-50 to-red-100">

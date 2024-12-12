@@ -40,7 +40,7 @@ defmodule ExamplePhoenix.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       # TODO bump on release to {:phoenix_live_view, "~> 1.0.0"},
       {:phoenix_live_view, "~> 0.20.1"},
-      {:floki, "~> 0.36.0", only: :test},
+      {:floki, "~> 0.36.0"},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
@@ -69,7 +69,6 @@ defmodule ExamplePhoenix.MixProject do
       {:certifi, "~> 2.12"},
       {:hammer, "~> 6.1"},
       {:cors_plug, "~> 3.0"},
-      {:floki, "~> 0.36.0"},
       {:cachex, "~> 3.6"},
       {:oban, "~> 2.15"}
     ]

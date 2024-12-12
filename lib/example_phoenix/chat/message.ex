@@ -5,6 +5,7 @@ defmodule ExamplePhoenix.Chat.Message do
   schema "messages" do
     field :content, :string
     field :user_name, :string
+    field :user_avatar, :string
     field :user_ip, :string
     field :media_url, :string
     field :media_type, :string
@@ -21,8 +22,8 @@ defmodule ExamplePhoenix.Chat.Message do
   """
   def changeset(message, attrs) do
     message
-    |> cast(attrs, [:content, :user_name, :room_id, :media_url, :media_type, :content_type, :title])
-    |> validate_required([:user_name, :room_id])
+    |> cast(attrs, [:content, :user_name, :user_avatar, :room_id, :media_url, :media_type, :content_type, :title])
+    |> validate_required([:content, :user_name, :user_avatar, :room_id])
     |> validate_at_least_one_present([:content, :media_url])
     |> foreign_key_constraint(:room_id)
   end

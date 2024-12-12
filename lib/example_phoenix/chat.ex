@@ -127,20 +127,10 @@ defmodule ExamplePhoenix.Chat do
     |> Repo.all()
   end
 
-  def create_message(attrs) do
-    case %Message{}
+  def create_message(attrs \\ %{}) do
+    %Message{}
     |> Message.changeset(attrs)
-    |> Repo.insert() do
-      {:ok, message} = result ->
-        # Broadcast ข้อความใหม่ไปยังทุคนในห้อง
-        Phoenix.PubSub.broadcast(
-          ExamplePhoenix.PubSub,
-          "room:#{message.room_id}",
-          {:new_message, message}
-        )
-        result
-      error -> error
-    end
+    |> Repo.insert()
   end
 
   def search_rooms(query) when is_binary(query) do
@@ -249,7 +239,7 @@ defmodule ExamplePhoenix.Chat do
 
     # schedule background job
     %{url: attrs.content, message_id: message.id}
-    |> FetchUrlMetadataWorker.new()
+    |> ExamplePhoenix.Workers.FetchUrlMetadataWorker.new()
     |> Oban.insert()
 
     {:ok, message}

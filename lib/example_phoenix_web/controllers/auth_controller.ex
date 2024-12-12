@@ -12,18 +12,31 @@ defmodule ExamplePhoenixWeb.AuthController do
     end
   end
 
-  def create(conn, %{"user" => %{"name" => name}}) do
-    case User.create_user(name) do
-      {:ok, _user} ->
+  def create(conn, %{"user" => user_params}) do
+    case User.get_user_by_name(user_params["name"]) do
+      %User{} = existing_user ->
+        {:ok, updated_user} = User.update_user(existing_user, %{avatar: user_params["avatar"]})
+        IO.inspect(updated_user, label: "Updated User")
         conn
-        |> put_session(:user_name, name)
+        |> put_session(:user_name, updated_user.name)
+        |> put_session(:user_avatar, updated_user.avatar)
         |> configure_session(renew: true)
         |> redirect(to: ~p"/chat")
 
-      {:error, changeset} ->
-        conn
-        |> put_flash(:error, error_message(changeset))
-        |> redirect(to: ~p"/auth")
+      nil ->
+        case User.create_user(user_params) do
+          {:ok, user} ->
+            conn
+            |> put_session(:user_name, user.name)
+            |> put_session(:user_avatar, user.avatar)
+            |> configure_session(renew: true)
+            |> redirect(to: ~p"/chat")
+
+          {:error, changeset} ->
+            conn
+            |> put_flash(:error, error_message(changeset))
+            |> redirect(to: ~p"/auth")
+        end
     end
   end
 
