@@ -38,49 +38,69 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
-    if connected?(socket) do
-      # Subscribe to room channel
-      Phoenix.PubSub.subscribe(ExamplePhoenix.PubSub, "room:#{id}")
-    end
-
     case Chat.get_room(id) do
       {:ok, room} ->
-        if connected?(socket) do
-          ExamplePhoenixWeb.Endpoint.subscribe("room:#{room.id}")
+        current_user = session["user_name"]
+
+        # ตรวจสอบสิทธิ์การเข้าถึงห้อง DM
+        if room.category == "dm" && current_user not in room.participants do
+          {:ok,
+           socket
+           |> put_flash(:error, "คุณไม่มีสิทธิ์เข้าถึงห้องสนทนานี้")
+           |> redirect(to: ~p"/")}
+        else
+          if connected?(socket) do
+            Phoenix.PubSub.subscribe(ExamplePhoenix.PubSub, "room:#{id}")
+          end
+
+          case Chat.get_room(id) do
+            {:ok, room} ->
+              if connected?(socket) do
+                ExamplePhoenixWeb.Endpoint.subscribe("room:#{room.id}")
+              end
+
+              client_ip = get_client_ip(socket)
+              messages = Chat.list_messages(room.id)
+
+              socket =
+                socket
+                |> assign(:current_user, session["user_name"])
+                |> assign(:room, room)
+                |> assign(:blocked, false)
+                |> assign(:block_remaining_seconds, 0)
+                |> assign(:client_ip, client_ip)
+                |> assign(:current_message, "")
+                |> assign(:message_ids, messages |> Enum.map(& &1.id) |> MapSet.new())
+                |> stream(:messages, messages)
+                |> assign(:show_emoji_modal, false)
+                |> assign(:show_gallery, false)
+                |> assign(:current_image, nil)
+                |> assign(:uploading, false)
+                |> assign(:upload_valid, false)
+                |> assign(:input_focused, false)
+                |> allow_upload(:media, @upload_options)
+                |> assign(:emojis, @emojis)
+                |> assign(:show_user_profile, false)
+                |> assign(:selected_user, nil)
+
+              if connected?(socket) do
+                check_block_status(socket)
+              end
+
+              {:ok, socket}
+
+            {:error, _reason} ->
+              {:ok,
+               socket
+               |> put_flash(:error, "ห้องสนทนาไม่มีอยู่")
+               |> redirect(to: ~p"/")}
+          end
         end
-
-        client_ip = get_client_ip(socket)
-        messages = Chat.list_messages(room.id)
-
-        socket =
-          socket
-          |> assign(:current_user, session["user_name"])
-          |> assign(:room, room)
-          |> assign(:blocked, false)
-          |> assign(:block_remaining_seconds, 0)
-          |> assign(:client_ip, client_ip)
-          |> assign(:current_message, "")
-          |> assign(:message_ids, messages |> Enum.map(& &1.id) |> MapSet.new())
-          |> stream(:messages, messages)
-          |> assign(:show_emoji_modal, false)
-          |> assign(:show_gallery, false)
-          |> assign(:current_image, nil)
-          |> assign(:uploading, false)
-          |> assign(:upload_valid, false)
-          |> assign(:input_focused, false)
-          |> allow_upload(:media, @upload_options)
-          |> assign(:emojis, @emojis)
-
-        if connected?(socket) do
-          check_block_status(socket)
-        end
-
-        {:ok, socket}
 
       {:error, _reason} ->
         {:ok,
          socket
-         |> put_flash(:error, "ห้องสนนนาไม่มีอยู่")
+         |> put_flash(:error, "ห้องสนทนาไม่มีอยู่")
          |> redirect(to: ~p"/")}
     end
   end
@@ -328,7 +348,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
          |> assign(:current_message, "")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "ไม��สามารถส่งข้อความได้")}
+        {:noreply, put_flash(socket, :error, "ไม่สามารถส่งข้อความได้")}
     end
   end
 
@@ -1199,7 +1219,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
     end
   end
 
-  # เพิ��มฟังก์ชันสำหรับแยกประเภท URL และดึงข้อมูล
+  # เพิ่มฟังก์ชันสำหรับแยกประเภท URL และดึงข้อมูล
   defp parse_url(url) do
     cond do
       youtube_id = extract_youtube_id(url) ->
@@ -1246,4 +1266,57 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
     "YouTube Video" # ค่าเริ่มต้น
   end
 
+  @impl true
+  def mount(_params, _session, socket) do
+    socket = assign(socket,
+      show_user_profile: false,
+      selected_user: nil
+    )
+    {:ok, socket}
+  end
+
+  @impl true
+def handle_event("show_user_profile", %{"user-name" => user_name, "user-avatar" => user_avatar}, socket) do
+  user = %{
+    id: user_name, # เพิ่ม id field
+    name: user_name,
+    avatar: user_avatar,
+    joined_at: DateTime.utc_now()
+  }
+
+  {:noreply,
+   socket
+   |> assign(:show_user_profile, true)
+   |> assign(:selected_user, user)}
+end
+
+  @impl true
+  def handle_event("close_user_profile", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_user_profile, false)
+     |> assign(:selected_user, nil)}
+  end
+
+  @impl true
+def handle_event("start_direct_message", %{"user-name" => target_user}, socket) do
+  current_user = socket.assigns.current_user
+
+  case Chat.create_or_get_dm_room(current_user, target_user) do
+    {:ok, room} ->
+      {:noreply,
+       socket
+       |> assign(:show_user_profile, false)
+       |> redirect(to: ~p"/chat/#{room.id}")}
+
+    {:error, _reason} ->
+      {:noreply,
+       socket
+       |> put_flash(:error, "ไม่สามารถเริ่มการสนทนาได้")}
+  end
+end
+
+  defp generate_user_id(name) do
+    :crypto.hash(:sha256, name) |> Base.encode16(case: :lower)
+  end
 end

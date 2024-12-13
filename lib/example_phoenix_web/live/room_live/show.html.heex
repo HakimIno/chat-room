@@ -56,9 +56,14 @@
             if(message.user_name == @current_user, do: "flex-row-reverse", else: "flex-row")
           ]}>
             <!-- Avatar -->
-            <div class="w-8 h-8 rounded-full flex items-center justify-center text-lg bg-gray-100">
+                  <div
+                  phx-click="show_user_profile"
+  phx-value-user-name={message.user_name}
+  phx-value-user-avatar={message.user_avatar} 
+                  class="w-8 h-8 rounded-full flex items-center justify-center text-lg bg-gray-100">
               <%= message.user_avatar %>
             </div>
+           
 
             <%= cond do %>
               <% message.media_type == "youtube" -> %>
@@ -530,4 +535,49 @@
       </div>
     </div>
   <% end %>
+
+  <!-- User Profile Modal -->
+<%= if @show_user_profile do %>
+  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50">
+    <div class="fixed inset-0 z-20 overflow-y-auto">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all p-6">
+          <!-- Close Button -->
+          <button 
+            phx-click="close_user_profile"
+            class="absolute right-4 top-4 text-gray-400 hover:text-gray-500"
+          >
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <!-- User Info -->
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white text-2xl">
+              <%= @selected_user.avatar %>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900"><%= @selected_user.name %></h3>
+              <p class="text-sm text-gray-500">
+                เข้าร่วมเมื่อ <%= Calendar.strftime(@selected_user.joined_at, "%d/%m/%Y") %>
+              </p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="space-y-3">
+            <button
+              phx-click="start_direct_message"
+              phx-value-user-name={@selected_user.name}
+              class="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              ส่งข้อความ
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
 </div>

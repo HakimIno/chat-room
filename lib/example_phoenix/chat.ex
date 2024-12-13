@@ -316,4 +316,30 @@ defmodule ExamplePhoenix.Chat do
     |> Floki.find("meta[property='og:image']")
     |> Enum.any?()
   end
+
+  def create_or_get_dm_room(user1, user2) do
+    # สร้าง unique dm_room_id จากชื่อผู้ใช้ทั้งสอง (เรียงตามตัวอักษร)
+    [sorted_user1, sorted_user2] = Enum.sort([user1, user2])
+    dm_room_id = "dm_#{sorted_user1}_#{sorted_user2}"
+
+    case Repo.get_by(Room, dm_room_id: dm_room_id) do
+      nil ->
+        # ถ้ายังไม่มีห้อง ให้สร้างใหม่
+        %Room{}
+        |> Room.changeset(%{
+          name: "DM: #{user1} & #{user2}",
+          category: "dm",
+          is_private: true,
+          creator_id: user1,
+          dm_room_id: dm_room_id,
+          participants: [user1, user2],
+          theme: "modern"
+        })
+        |> Repo.insert()
+
+      room ->
+        # ถ้ามีห้องอยู่แล้ว ส่งห้องนั้นกลับไป
+        {:ok, room}
+    end
+  end
 end
