@@ -66,4 +66,6 @@ defmodule ExamplePhoenixWeb.Router do
   def get_session(conn) do
     %{"user_name" => get_session(conn, :user_name)}
   end
+
+  forward "/favicon-proxy", ExamplePhoenixWeb.FaviconProxy
 end

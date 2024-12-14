@@ -144,53 +144,67 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
     # แยก URL จาก params
     content = case params do
       %{"message" => message} -> message
-      %{"value" => value} ->
-        URI.decode_query(value) |> Map.get("message")
+      %{"value" => value} -> URI.decode_query(value) |> Map.get("message")
       _ -> nil
     end
 
     if content do
-      # เพิ่มการตรวจสอบ URL และดึงข้อมูล metadata
-      message_params = case parse_url(content) do
-        {:ok, metadata} ->
-          %{
-            "content" => content,
-            "user_name" => socket.assigns.current_user,
-            "user_avatar" => socket.assigns.current_user_avatar,
-            "room_id" => socket.assigns.room.id,
-            "media_type" => metadata.type,
-            "media_url" => metadata.thumbnail,
-            "title" => metadata.title
-          }
-        :error ->
-          %{
-            "content" => content,
-            "user_name" => socket.assigns.current_user,
-            "user_avatar" => socket.assigns.current_user_avatar,
-            "room_id" => socket.assigns.room.id
-          }
-      end
+      # ตรวจสอบว่าเป็น URL หรือไม่
+      case URI.parse(content) do
+        %URI{scheme: scheme} when scheme in ["http", "https"] ->
+          # เป็น URL ให้ดึง metadata
+          case get_url_metadata(content) do
+            {:ok, metadata} ->
+              message_params = %{
+                "content" => content,
+                "user_name" => socket.assigns.current_user,
+                "user_avatar" => socket.assigns.current_user_avatar,
+                "room_id" => socket.assigns.room.id,
+                "media_type" => metadata.media_type,
+                "media_url" => metadata.media_url,
+                "title" => metadata.title
+              }
+              create_and_broadcast_message(message_params, socket)
 
-      case Chat.create_message(message_params) do
-        {:ok, message} ->
-          # Broadcast message to all subscribers
-          Phoenix.PubSub.broadcast(
-            ExamplePhoenix.PubSub,
-            "room:#{socket.assigns.room.id}",
-            {:new_message, message}
-          )
-          {:noreply, socket |> assign(:current_message, "")}
-        {:error, _changeset} ->
-          {:noreply, socket |> put_flash(:error, "ไม่สามารถส่งข้อความได้")}
+            {:error, _} ->
+              # กรณีไม่สามารถดึง metadata ได้ ให้ส่งเป็นข้อความปกติ
+              create_regular_message(content, socket)
+          end
+
+        _ ->
+          # ไม่ใช่ URL ให้ส่งเป็นข้อความปกติ
+          create_regular_message(content, socket)
       end
     else
-      {:noreply, socket |> put_flash(:error, "ข้อความไม่ถูกต้อง")}
+      {:noreply, socket}
     end
   end
 
-  # กรณีข้อความว่าง
-  def handle_event("submit_message", _params, socket) do
-    {:noreply, socket}
+  # เพิ่มฟังก์ชันสำหรับสร้างข้อความปกติ
+  defp create_regular_message(content, socket) do
+    message_params = %{
+      "content" => content,
+      "user_name" => socket.assigns.current_user,
+      "user_avatar" => socket.assigns.current_user_avatar,
+      "room_id" => socket.assigns.room.id
+    }
+    create_and_broadcast_message(message_params, socket)
+  end
+
+  # เพิ่มฟังก์ชันสำหรับสร้างและ broadcast ข้อความ
+  defp create_and_broadcast_message(message_params, socket) do
+    case Chat.create_message(message_params) do
+      {:ok, message} ->
+        Phoenix.PubSub.broadcast(
+          ExamplePhoenix.PubSub,
+          "room:#{socket.assigns.room.id}",
+          {:new_message, message}
+        )
+        {:noreply, socket |> assign(:current_message, "")}
+
+      {:error, _changeset} ->
+        {:noreply, socket |> put_flash(:error, "ไม่สามารถส่งข้อความได้")}
+    end
   end
 
   defp handle_youtube_url(socket, url) do
@@ -353,10 +367,18 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   end
 
   defp extract_youtube_id(url) do
-    case Regex.run(~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/, url) do
-      [_, id] -> id
-      _ -> nil
-    end
+    patterns = [
+      ~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+      ~r/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
+      ~r/youtube\.com\/v\/([a-zA-Z0-9_-]+)/
+    ]
+
+    Enum.find_value(patterns, fn pattern ->
+      case Regex.run(pattern, url) do
+        [_, id] -> id
+        _ -> nil
+      end
+    end)
   end
 
   @impl true
@@ -815,7 +837,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
     else
       {:noreply,
        socket
-       |> put_flash(:error, "กรุณารอให้ไฟล์อัพโหลดเสร็จสมบูรณ์")}
+       |> put_flash(:error, "กรุณารอให้ไฟล์อัพโหลดเสร็จสม���ูรณ์")}
     end
   end
 
@@ -963,7 +985,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
 
   end
 
-  # เพิ่มการจัดการ error ที่ดีขึ้น
+  # เพิ่มการจัดการ error ที่ดีึ้น
   defp handle_upload_error(socket, error) do
     error_message = case error do
       :too_large -> "ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 20MB)"
@@ -1048,8 +1070,8 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   # เพิ่ม function สำหรับดึง video ID
   defp extract_youtube_id(url) do
     case Regex.run(~r/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/, url) do
-      [_, video_id] -> {:ok, video_id}
-      _ -> :error
+      [_, id] -> id
+      _ -> nil
     end
   end
 
@@ -1062,201 +1084,81 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   # ปรับปรุงฟังก์ชัน get_url_metadata
   defp get_url_metadata(url) do
     Logger.info("Getting metadata for URL: #{url}")
+    host = URI.parse(url).host
 
     cond do
-      # YouTube
-      String.match?(url, ~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/) ->
-        video_id = case Regex.run(~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/, url) do
-          [_, id] -> id
-          _ -> nil
-        end
-
-        if video_id do
-          case HTTPoison.get("https://www.youtube.com/oembed?url=#{url}&format=json") do
-            {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-              case Jason.decode(body) do
-                {:ok, data} ->
-                  {:ok, %{
-                    title: data["title"],
-                    media_url: "https://img.youtube.com/vi/#{video_id}/maxresdefault.jpg",
-                    media_type: "youtube"
-                  }}
-                _ -> {:error, "Invalid YouTube response"}
-              end
-            _ -> {:error, "Failed to fetch YouTube data"}
-          end
-        else
-          {:error, "Invalid YouTube URL"}
-        end
-
-      # Instagram
-      String.match?(url, ~r/instagram\.com\/(p|reel)\/([^\/\?]+)/) ->
-        [_, type, post_id] = Regex.run(~r/instagram\.com\/(p|reel)\/([^\/\?]+)/, url)
-        {:ok, %{
-          title: "Instagram #{String.capitalize(type)}",
-          media_url: "https://www.instagram.com/#{type}/#{post_id}/embed",
-          media_type: "instagram"
-        }}
-
-      # TikTok
-      String.match?(url, ~r/tiktok\.com\/@[^\/]+\/video\/(\d+)/) ->
-        [_, video_id] = Regex.run(~r/tiktok\.com\/@[^\/]+\/video\/(\d+)/, url)
-        {:ok, %{
-          title: "TikTok Video",
-          media_url: "https://www.tiktok.com/embed/v2/#{video_id}",
-          media_type: "tiktok"
-        }}
-
-      # Twitter/X
-      String.match?(url, ~r/(?:twitter\.com|x\.com)\/[^\/]+\/status\/(\d+)/) ->
-        [_, tweet_id] = Regex.run(~r/(?:twitter\.com|x\.com)\/[^\/]+\/status\/(\d+)/, url)
-        {:ok, %{
-          title: "X Post",
-          media_url: "https://platform.twitter.com/embed/Tweet.html?id=#{tweet_id}",
-          media_type: "twitter"
-        }}
-
-      # Facebook
-      String.match?(url, ~r/facebook\.com/) ->
-        encoded_url = URI.encode_www_form(url)
-        {:ok, %{
-          title: "Facebook Post",
-          media_url: "https://www.facebook.com/plugins/post.php?href=#{encoded_url}&show_text=true&width=500",
-          media_type: "facebook"
-        }}
-
+      String.contains?(url, ["youtube.com", "youtu.be"]) ->
+        handle_youtube_url(url)
+      String.contains?(url, ["twitter.com", "x.com"]) ->
+        handle_twitter_url(url)
       true ->
-        {:error, "Unsupported URL"}
-    end
-  end
+        case HTTPoison.get(url, [], follow_redirect: true, max_redirect: 5) do
+          {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+            title = extract_title(body) || host
+            description = extract_description(body)
+            image = extract_image(body)
+            favicon = "https://www.google.com/s2/favicons?domain=#{host}&sz=128"
 
-  # ปรับปรุงฟังก์ชัน handle_media_upload
-  defp handle_media_upload(message, socket) do
-    Logger.info("Handling media upload with message: #{inspect(message)}")
-
-    [entry | _] = socket.assigns.uploads.media.entries
-
-    if entry.done? do
-      consume_uploaded_entries(socket, :media, fn %{path: path}, _entry ->
-        case upload_file(path, entry) do
-          {:ok, url} ->
-            Logger.info("File uploaded successfully to: #{url}")
-
-            message_params = %{
-              content: if(byte_size(message || "") > 0, do: message, else: nil),
-              user_name: socket.assigns.current_user,
-              room_id: socket.assigns.room.id,
-              media_url: url,
-              media_type: get_media_type(entry.client_type),
-              content_type: entry.client_type,
-              title: entry.client_name
-            }
-            |> maybe_remove_empty_content()
-
-            case Chat.create_message(message_params) do
-              {:ok, new_message} ->
-                Logger.info("Message created successfully")
-                {:ok, new_message}
-              {:error, reason} ->
-                Logger.error("Failed to create message: #{inspect(reason)}")
-                {:error, "ไม่สามารถบันทึกข้อความได้"}
-            end
+            {:ok, %{
+              title: title,
+              media_url: image,
+              media_type: "url",
+              description: description,
+              favicon_url: favicon
+            }}
 
           {:error, reason} ->
-            Logger.error("Upload failed: #{inspect(reason)}")
-            {:error, "อัพโหลดไฟล์ไม่สำเร็จ"}
+            Logger.error("Failed to fetch URL: #{inspect(reason)}")
+            {:ok, %{
+              title: host,
+              media_type: "url",
+              favicon_url: "https://www.google.com/s2/favicons?domain=#{host}&sz=128"
+            }}
         end
-      end)
-      |> case do
-        [{:ok, new_message}] ->
-          {:noreply,
-           socket
-           |> stream_insert(:messages, new_message, at: -1)
-           |> assign(:current_message, "")
-           |> assign(:uploading, false)}
-
-        [{:error, reason}] ->
-          {:noreply,
-           socket
-           |> put_flash(:error, reason)
-           |> assign(:uploading, false)}
-
-        _ ->
-          {:noreply,
-           socket
-           |> put_flash(:error, "เกิดข้อผิดพลาดที่ไม่คาดคิด")
-           |> assign(:uploading, false)}
-      end
-    else
-      {:noreply,
-       socket
-       |> put_flash(:error, "กรุณารอให้อัพโหลดเสร็จสมบูรณ์")}
     end
   end
 
-  # เพิ่ม event handlers
-  def handle_event("focus_input", _, socket) do
-    {:noreply, assign(socket, :input_focused, true)}
-  end
-
-  def handle_event("blur_input", _, socket) do
-    {:noreply, assign(socket, :input_focused, false)}
-  end
-
-  def handle_event("send_message", %{"content" => content}, socket) do
-    message_params = %{
-      "content" => content,
-      "user_name" => socket.assigns.current_user,
-      "user_avatar" => socket.assigns.current_user_avatar,
-      "room_id" => socket.assigns.room.id
-    }
-
-    case Chat.create_message(message_params) do
-      {:ok, _message} ->
-        {:noreply, socket |> assign(:current_message, "")}
-      {:error, _changeset} ->
-        {:noreply, socket |> put_flash(:error, "ไม่สามารถส่งข้อความได้")}
+  # แยกฟังก์ชันสำหรับดึงข้อมูลแต่ละส่วน
+  defp extract_title(html) do
+    case Floki.parse_document(html) do
+      {:ok, document} ->
+        # ลองดึงจาก og:title ก่อน
+        case Floki.find(document, "meta[property='og:title']") |> Floki.attribute("content") do
+          [title | _] -> title
+          [] ->
+            # ถ้าไม่มี og:title ให้ดึงจาก title tag
+            case Floki.find(document, "title") |> Floki.text() do
+              "" -> nil
+              title -> title
+            end
+        end
+      _ -> nil
     end
   end
 
-  # เพิ่มฟังก์ชันสำหรับแยกประเภท URL และดึงข้อมูล
-  defp parse_url(url) do
-    cond do
-      youtube_id = extract_youtube_id(url) ->
-        {:ok, %{
-          type: "youtube",
-          thumbnail: "https://img.youtube.com/vi/#{youtube_id}/maxresdefault.jpg",
-          title: get_youtube_title(youtube_id)
-        }}
-
-      # เพิ่มเงื่อนไขสำหรับ platform อื่นๆ
-      String.contains?(url, "instagram.com") ->
-        {:ok, %{type: "instagram", thumbnail: nil, title: nil}}
-
-      String.contains?(url, "tiktok.com") ->
-        {:ok, %{type: "tiktok", thumbnail: nil, title: nil}}
-
-      String.contains?(url, "facebook.com") ->
-        {:ok, %{type: "facebook", thumbnail: nil, title: nil}}
-
-      String.contains?(url, "twitter.com") ->
-        {:ok, %{type: "twitter", thumbnail: nil, title: nil}}
-
-      true -> :error
+  defp extract_description(html) do
+    case Floki.parse_document(html) do
+      {:ok, document} ->
+        case Floki.find(document, "meta[property='og:description']") |> Floki.attribute("content") do
+          [desc | _] -> desc
+          [] ->
+            case Floki.find(document, "meta[name='description']") |> Floki.attribute("content") do
+              [desc | _] -> desc
+              [] -> nil
+            end
+        end
+      _ -> nil
     end
   end
 
-  defp extract_youtube_id(url) do
-    cond do
-      # Full URL: https://www.youtube.com/watch?v=VIDEO_ID
-      Regex.run(~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/, url) ->
-        Regex.run(~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/, url) |> List.last()
-
-      # Short URL: https://youtu.be/VIDEO_ID
-      Regex.run(~r/youtu\.be\/([^&\s]+)/, url) ->
-        Regex.run(~r/youtu\.be\/([^&\s]+)/, url) |> List.last()
-
-      true -> nil
+  defp extract_image(html) do
+    case Floki.parse_document(html) do
+      {:ok, document} ->
+        case Floki.find(document, "meta[property='og:image']") |> Floki.attribute("content") do
+          [image | _] -> image
+          [] -> nil
+        end
+      _ -> nil
     end
   end
 
@@ -1318,5 +1220,59 @@ end
 
   defp generate_user_id(name) do
     :crypto.hash(:sha256, name) |> Base.encode16(case: :lower)
+  end
+
+  # สำหรับ YouTube URLs
+  defp handle_youtube_url(url) do
+    case extract_youtube_id(url) do
+      nil ->
+        {:error, "Invalid YouTube URL"}
+      id ->
+        {:ok, %{
+          title: "YouTube Video",
+          media_url: "https://img.youtube.com/vi/#{id}/maxresdefault.jpg",
+          media_type: "youtube",
+          video_id: id
+        }}
+    end
+  end
+
+  # สำหรับ Twitter/X URLs
+  defp handle_twitter_url(url) do
+    # เนื่องจาก Twitter/X ต้องการ API key จึงส่งกลับแบบพื้นฐาน
+    {:ok, %{
+      title: "Twitter Post",
+      media_url: nil,
+      media_type: "twitter",
+      url: url
+    }}
+  end
+
+  # ฟังก์ชันที่มีอยู่แล้ว แต่เพิ่มเติมการจัดการ error
+  defp extract_youtube_id(url) do
+    patterns = [
+      ~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+      ~r/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
+      ~r/youtube\.com\/v\/([a-zA-Z0-9_-]+)/
+    ]
+
+    Enum.find_value(patterns, fn pattern ->
+      case Regex.run(pattern, url) do
+        [_, id] -> id
+        _ -> nil
+      end
+    end)
+  end
+
+  # เพิ่ม handle_event สำหรับ focus_input
+  @impl true
+  def handle_event("focus_input", %{"value" => _}, socket) do
+    {:noreply, assign(socket, input_focused: true)}
+  end
+
+  # เพิ่ม handle_event สำหรับ blur_input ด้วย (ถ้ายังไม่มี)
+  @impl true
+  def handle_event("blur_input", %{"value" => _}, socket) do
+    {:noreply, assign(socket, input_focused: false)}
   end
 end

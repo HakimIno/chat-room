@@ -212,19 +212,23 @@
                 </div>
                 
               <% message.media_type == "url" -> %>
-                <div class="rounded-2xl overflow-hidden max-w-[350px] border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 bg-gradient-to-br from-gray-50 to-gray-100">
-                  <a href={message.content} target="_blank" rel="noopener noreferrer" class="block group">
-                    <!-- URL Icon Container -->
-                    <div class="relative w-[250px] md:w-[350px] aspect-[4/3] bg-gray-100">
-                      <div class="absolute inset-0 flex items-center justify-center bg-black/5">
-                        <div class="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center">
-                          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
+                <div class="rounded-2xl overflow-hidden max-w-[350px] w-full border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 bg-gradient-to-br from-gray-50 to-gray-100">
+  <a href={message.content} target="_blank" rel="noopener noreferrer" class="block group">
+    <!-- URL Icon Container -->
+    <div class="relative w-full aspect-video bg-gray-100" id={"url-preview-#{message.id}"}>
+      <div class="absolute inset-0 flex items-center justify-center transition-colors duration-500">
+        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
+          <img 
+            src={"https://www.google.com/s2/favicons?domain=#{URI.parse(message.content).host}&sz=128"}
+            alt="Website Icon"
+            class="w-6 h-6 sm:w-8 sm:h-8 object-contain"
+            id={"favicon-#{message.id}"}
+            data-target={"url-preview-#{message.id}"}
+            onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMTMuODI4IDEwLjE3MmE0IDQgMCAwMC01LjY1NiAwbC00IDRhNCA0IDAgMTA1LjY1NiA1LjY1NmwxLjEwMi0xLjEwMW0tLjc1OC00Ljg5OWE0IDQgMCAwMDUuNjU2IDBsNC00YTQgNCAwIDAwLTUuNjU2LTUuNjU2bC0xLjEgMS4xIi8+PC9zdmc+'" 
+          />
+        </div>
+      </div>
+    </div>
                     
                     <!-- Content Container -->
                     <div class="p-4">

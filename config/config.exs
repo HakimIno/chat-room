@@ -20,8 +20,7 @@ config :example_phoenix, ExamplePhoenixWeb.Endpoint,
     layout: false
   ],
   pubsub_server: ExamplePhoenix.PubSub,
-  live_view: [signing_salt: "4hw0InXi"],
-  adapter: Phoenix.PubSub.PG2
+  live_view: [signing_salt: "4hw0InXi"]
 
 # Configures the mailer
 #
@@ -47,13 +46,20 @@ config :hammer,
   backend: {Hammer.Backend.ETS, [
     expiry_ms: 60_000 * 60 * 4,    # 4 hours
     cleanup_interval_ms: 60_000 * 10  # 10 minutes
-  ]}
+  ]},
+  link_preview_limits: [
+    scale_ms: 60_000,              # 1 minute
+    limit: 30                      # 30 requests per minute
+  ]
 
 # Configure Oban
 config :example_phoenix, Oban,
   repo: ExamplePhoenix.Repo,
   plugins: [Oban.Plugins.Pruner],
-  queues: [default: 10]
+  queues: [
+    default: 10,
+    link_preview: 5  # เพิ่ม queue สำหรับ link preview
+  ]
 
 # Configure tailwind (the version is required)
 config :tailwind,
@@ -87,16 +93,38 @@ config :ex_aws,
     host: "436b6a515d460c25108e569e4cc2ffdf.r2.cloudflarestorage.com",
     region: "auto",
     port: 443
-  ]
-
-# เพิ่มการตั้งค�า SSL
-config :ex_aws, :hackney_opts,
-  recv_timeout: 30_000,
-  pool: false,
-  ssl_options: [
-    verify: :verify_none
+  ],
+  hackney_opts: [
+    recv_timeout: 30_000,
+    pool: false,
+    ssl_options: [verify: :verify_none]
   ]
 
 config :example_phoenix, :r2,
   bucket_name: "lyra",
   public_url: "https://pub-11496457277242a8b2070cbd977c20ef.r2.dev"
+
+# Cache Configuration
+config :example_phoenix, :cache,
+  link_preview_cache: [
+    ttl: :timer.hours(24),
+    max_size: 1000
+  ]
+
+# Link Preview Configuration
+config :example_phoenix, :link_preview,
+  max_file_size: 10_000_000,  # 10MB
+  timeout: 5_000,             # 5 seconds
+  allowed_domains: [
+    "youtube.com", "youtu.be",
+    "facebook.com", "fb.com",
+    "instagram.com",
+    "twitter.com", "x.com",
+    "github.com",
+    "linkedin.com"
+  ],
+  blocked_domains: [
+    "pornhub.com",
+    "onlyfans.com"
+    # เพิ่ม domains ที่ต้องการบล็อก
+  ]
