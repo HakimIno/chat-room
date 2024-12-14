@@ -364,6 +364,7 @@
               phx-hook="Keyboard"
               type="text"
               name="message"
+              maxlength="512"
               value={@current_message}
               placeholder={if(@blocked, do: format_block_time(@block_remaining_seconds), else: "พิมพ์ข้อความ...")}
               class={[
