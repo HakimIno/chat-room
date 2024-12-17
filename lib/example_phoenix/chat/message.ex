@@ -23,21 +23,19 @@ defmodule ExamplePhoenix.Chat.Message do
   def changeset(message, attrs) do
     message
     |> cast(attrs, [:content, :user_name, :user_avatar, :room_id, :media_url, :media_type, :content_type, :title])
-    |> validate_required([:content, :user_name, :user_avatar, :room_id])
-    |> validate_at_least_one_present([:content, :media_url])
+    |> validate_required([:user_name, :user_avatar, :room_id])
+    |> validate_content_or_media()
     |> foreign_key_constraint(:room_id)
   end
 
-  defp validate_at_least_one_present(changeset, fields) do
-    if Enum.any?(fields, &present?(changeset, &1)) do
-      changeset
-    else
-      add_error(changeset, hd(fields), "at least one of #{inspect(fields)} must be present")
-    end
-  end
+  defp validate_content_or_media(changeset) do
+    content = get_field(changeset, :content)
+    media_url = get_field(changeset, :media_url)
 
-  defp present?(changeset, field) do
-    value = get_field(changeset, field)
-    value && value != ""
+    cond do
+      is_binary(content) and byte_size(content) > 0 -> changeset
+      is_binary(media_url) and byte_size(media_url) > 0 -> changeset
+      true -> add_error(changeset, :content, "message or media is required")
+    end
   end
 end

@@ -22,7 +22,8 @@ defmodule ExamplePhoenixWeb.RoomLive.Index do
      |> assign(:selected_room_id, nil)
      |> assign(:room, %Room{})
      |> assign(:current_category, "all")
-     |> assign(:search_term, "")}
+     |> assign(:search_term, "")
+     |> assign(:input_focused, false)}
   end
 
   # Group all handle_event/3 functions together
@@ -149,7 +150,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Index do
          |> assign(:rooms, Chat.list_rooms())}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        # Debug log สำหรับ error
+        # Debug log ��ำหรับ error
         IO.inspect(changeset.errors, label: "Validation errors")
 
         {:noreply,
@@ -184,5 +185,15 @@ defmodule ExamplePhoenixWeb.RoomLive.Index do
         "#{field} #{msg}"
     end)
     |> Enum.join(", ")
+  end
+
+  @impl true
+  def handle_event("blur_input", _params, socket) do
+    {:noreply, assign(socket, :input_focused, false)}
+  end
+
+  @impl true
+  def handle_event("focus_input", _params, socket) do
+    {:noreply, assign(socket, :input_focused, true)}
   end
 end

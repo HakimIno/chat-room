@@ -27,27 +27,44 @@ import KeyboardHook from "./hooks/keyboard"
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let Hooks = {
   Keyboard: KeyboardHook,
+  MessageInput: {
+    mounted() {
+      this.el.addEventListener("submit_message", () => {
+        this.el.value = "";
+      });
+
+      this.handleEvent("clear_input", () => {
+        this.el.value = "";
+      });
+    }
+  },
   ScrollChat: {
     mounted() {
       this.shouldScroll = true;
-      this.el.scrollTop = this.el.scrollHeight;
+      setTimeout(() => {
+        this.el.scrollTop = this.el.scrollHeight;
+      }, 100);
       
       // ตรวจจับการ scroll
       this.el.addEventListener("scroll", () => {
         const bottom = this.el.scrollHeight - this.el.clientHeight;
-        this.shouldScroll = Math.abs(this.el.scrollTop - bottom) < 50;
+        this.shouldScroll = Math.abs(this.el.scrollTop - bottom) < 100;
       });
 
       this.handleEvent("new-message", () => {
-        if (this.shouldScroll) {
-          this.el.scrollTop = this.el.scrollHeight;
-        }
+        setTimeout(() => {
+          if (this.shouldScroll) {
+            this.el.scrollTop = this.el.scrollHeight;
+          }
+        }, 100);
       });
     },
     updated() {
-      if (this.shouldScroll) {
-        this.el.scrollTop = this.el.scrollHeight;
-      }
+      setTimeout(() => {
+        if (this.shouldScroll) {
+          this.el.scrollTop = this.el.scrollHeight;
+        }
+      }, 100);
     }
   }
 }
