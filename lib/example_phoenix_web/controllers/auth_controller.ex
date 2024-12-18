@@ -17,6 +17,7 @@ defmodule ExamplePhoenixWeb.AuthController do
       %User{} = existing_user ->
         {:ok, updated_user} = User.update_user(existing_user, %{avatar: user_params["avatar"]})
         IO.inspect(updated_user, label: "Updated User")
+
         conn
         |> put_session(:user_name, updated_user.name)
         |> put_session(:user_avatar, updated_user.avatar)
@@ -44,8 +45,10 @@ defmodule ExamplePhoenixWeb.AuthController do
     case changeset.errors do
       [{:name, {_, [constraint: :unique, constraint_name: _]}} | _] ->
         "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว"
+
       [{:name, {msg, _}} | _] ->
         "ชื่อผู้ใช้ไม่ถูกต้อง: #{msg}"
+
       _ ->
         "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"
     end

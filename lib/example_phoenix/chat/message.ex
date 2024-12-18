@@ -22,7 +22,16 @@ defmodule ExamplePhoenix.Chat.Message do
   """
   def changeset(message, attrs) do
     message
-    |> cast(attrs, [:content, :user_name, :user_avatar, :room_id, :media_url, :media_type, :content_type, :title])
+    |> cast(attrs, [
+      :content,
+      :user_name,
+      :user_avatar,
+      :room_id,
+      :media_url,
+      :media_type,
+      :content_type,
+      :title
+    ])
     |> validate_required([:user_name, :user_avatar, :room_id])
     |> validate_content_or_media()
     |> foreign_key_constraint(:room_id)

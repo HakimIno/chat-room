@@ -9,7 +9,8 @@ defmodule ExamplePhoenix.Chat do
   @block_duration_hours 24
 
   # เพิ่ม cache สำหรับ URL metadata
-  @cache_ttl :timer.hours(24) # เก็บ cache 24 ชั่วโมง
+  # เก็บ cache 24 ชั่วโมง
+  @cache_ttl :timer.hours(24)
 
   def list_rooms do
     Repo.all(Room)
@@ -39,6 +40,7 @@ defmodule ExamplePhoenix.Chat do
           {:ok, _room} = result ->
             increment_attempt(user_id)
             result
+
           error ->
             error
         end
@@ -109,7 +111,9 @@ defmodule ExamplePhoenix.Chat do
 
       rate_limit ->
         now = NaiveDateTime.local_now()
-        block_expires_at = NaiveDateTime.add(rate_limit.last_attempt_at, @block_duration_hours * 3600, :second)
+
+        block_expires_at =
+          NaiveDateTime.add(rate_limit.last_attempt_at, @block_duration_hours * 3600, :second)
 
         if NaiveDateTime.compare(block_expires_at, now) == :gt do
           NaiveDateTime.diff(block_expires_at, now, :second)
@@ -164,7 +168,7 @@ defmodule ExamplePhoenix.Chat do
     current_users = room.last_active_users || []
 
     updated_users =
-      ([%{name: user_name, avatar_url: avatar_url} | current_users])
+      [%{name: user_name, avatar_url: avatar_url} | current_users]
       |> Enum.uniq_by(& &1.name)
       |> Enum.take(3)
 
@@ -248,12 +252,15 @@ defmodule ExamplePhoenix.Chat do
   def fetch_url_metadata(url) do
     # เพิ่ม timeout และ error handling
     try do
-      Task.await(Task.async(fn ->
-        case HTTPoison.get(url, [], timeout: 5000, recv_timeout: 5000) do
-          {:ok, response} -> parse_metadata(response)
-          {:error, _} -> default_metadata()
-        end
-      end), 6000)
+      Task.await(
+        Task.async(fn ->
+          case HTTPoison.get(url, [], timeout: 5000, recv_timeout: 5000) do
+            {:ok, response} -> parse_metadata(response)
+            {:error, _} -> default_metadata()
+          end
+        end),
+        6000
+      )
     catch
       :exit, _ -> default_metadata()
     end
@@ -276,7 +283,9 @@ defmodule ExamplePhoenix.Chat do
           media_url: extract_media_url(document),
           media_type: determine_media_type(document)
         }
-      _ -> default_metadata()
+
+      _ ->
+        default_metadata()
     end
   end
 

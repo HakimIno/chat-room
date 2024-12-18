@@ -35,7 +35,12 @@ defmodule ExamplePhoenix.StoreTest do
 
     test "update_product/2 with valid data updates the product" do
       product = product_fixture()
-      update_attrs = %{name: "some updated name", description: "some updated description", price: "456.7"}
+
+      update_attrs = %{
+        name: "some updated name",
+        description: "some updated description",
+        price: "456.7"
+      }
 
       assert {:ok, %Product{} = product} = Store.update_product(product, update_attrs)
       assert product.name == "some updated name"

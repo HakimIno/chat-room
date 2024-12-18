@@ -8,9 +8,11 @@ defmodule ExamplePhoenixWeb.RoomLive.Index do
   @impl true
   def mount(_params, session, socket) do
     rooms = Chat.list_rooms()
-    rooms_with_users = Enum.map(rooms, fn room ->
-      %{room | last_active_users: []}
-    end)
+
+    rooms_with_users =
+      Enum.map(rooms, fn room ->
+        %{room | last_active_users: []}
+      end)
 
     {:ok,
      socket
@@ -29,21 +31,25 @@ defmodule ExamplePhoenixWeb.RoomLive.Index do
   # Group all handle_event/3 functions together
   @impl true
   def handle_event("search", %{"value" => search_term}, socket) do
-    filtered_rooms = Chat.list_rooms()
-    |> Enum.filter(fn room ->
-      String.contains?(String.downcase(room.name), String.downcase(search_term))
-    end)
+    filtered_rooms =
+      Chat.list_rooms()
+      |> Enum.filter(fn room ->
+        String.contains?(String.downcase(room.name), String.downcase(search_term))
+      end)
 
     {:noreply, assign(socket, rooms: filtered_rooms, search_term: search_term)}
   end
 
   def handle_event("filter_category", %{"category" => category}, socket) do
-    filtered_rooms = case category do
-      "all" -> Chat.list_rooms()
-      category ->
-        Chat.list_rooms()
-        |> Enum.filter(fn room -> room.category == category end)
-    end
+    filtered_rooms =
+      case category do
+        "all" ->
+          Chat.list_rooms()
+
+        category ->
+          Chat.list_rooms()
+          |> Enum.filter(fn room -> room.category == category end)
+      end
 
     {:noreply, assign(socket, rooms: filtered_rooms, current_category: category)}
   end

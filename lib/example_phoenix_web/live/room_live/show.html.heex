@@ -8,7 +8,6 @@
 ]}>
   <!-- Decorative SVG Background -->
   <.background room={@room} />
-
   <!-- Header -->
   <div class={[
     "flex-none border-b backdrop-blur-lg px-3 sm:px-4 py-3 sm:py-4",
@@ -38,16 +37,20 @@
       </div>
       <div class="flex items-center gap-2">
         <span class="text-sm text-gray-600"><%= @current_user %></span>
-        <%= link "ออกจากห้อง", 
-            to: ~p"/chat", 
-            class: "px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-        %>
+        <%= link("ออกจากห้อง",
+          to: ~p"/chat",
+          class:
+            "px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+        ) %>
       </div>
     </div>
   </div>
-
   <!-- Messages -->
-  <div id="messages-container" class="flex-1 overflow-y-auto px-4 mt-2 overflow-x-hidden mb-12" phx-hook="ScrollChat">
+  <div
+    id="messages-container"
+    class="flex-1 overflow-y-auto px-4 mt-2 overflow-x-hidden mb-12"
+    phx-hook="ScrollChat"
+  >
     <div class="max-w-5xl mx-auto">
       <div id="messages" phx-update="stream">
         <div :for={{dom_id, message} <- @streams.messages} id={dom_id}>
@@ -56,23 +59,28 @@
             if(message.user_name == @current_user, do: "flex-row-reverse", else: "flex-row")
           ]}>
             <!-- Avatar -->
-                  <div
-                  phx-click="show_user_profile"
-  phx-value-user-name={message.user_name}
-  phx-value-user-avatar={message.user_avatar} 
-                  class="w-8 h-8 rounded-full flex items-center justify-center text-lg bg-gray-100">
+            <div
+              phx-click="show_user_profile"
+              phx-value-user-name={message.user_name}
+              phx-value-user-avatar={message.user_avatar}
+              class="w-8 h-8 rounded-full flex items-center justify-center text-lg bg-gray-100"
+            >
               <%= message.user_avatar %>
             </div>
-           
 
             <%= cond do %>
               <% message.media_type == "youtube" -> %>
                 <div class="rounded-2xl overflow-hidden  max-w-[250px] md:max-w-[320px] border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 bg-gradient-to-br from-red-50 to-red-100">
-                  <a href={message.content} target="_blank" rel="noopener noreferrer" class="block group">
+                  <a
+                    href={message.content}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="block group"
+                  >
                     <!-- Thumbnail Container -->
                     <div class="relative aspect-video w-full bg-gray-100">
-                      <img 
-                        src={message.media_url} 
+                      <img
+                        src={message.media_url}
                         alt={message.title}
                         class="w-full h-full object-cover"
                       />
@@ -80,33 +88,39 @@
                       <div class="absolute inset-0 flex items-center justify-center">
                         <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
                           <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z"/>
+                            <path d="M8 5v14l11-7z" />
                           </svg>
                         </div>
                       </div>
                     </div>
-                    
                     <!-- Content Container -->
                     <div class="p-4">
                       <!-- YouTube Badge -->
                       <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs mb-2 bg-red-100 text-red-600">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                         </svg>
                         <span class="font-medium">YouTube</span>
                       </div>
-                      
                       <!-- Title -->
                       <h3 class="font-semibold text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors">
                         <%= message.title %>
                       </h3>
-                      
                       <!-- Footer -->
                       <div class="flex items-center justify-between mt-3 text-xs text-gray-500">
                         <div class="flex items-center gap-2">
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
                           </svg>
                           <span>Watch on YouTube</span>
                         </div>
@@ -114,7 +128,6 @@
                     </div>
                   </a>
                 </div>
-                
               <% message.media_type in ["instagram", "tiktok", "facebook", "twitter"] -> %>
                 <div class={[
                   "rounded-2xl overflow-hidden max-w-[320px] border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300",
@@ -125,7 +138,12 @@
                     "twitter" -> "bg-gradient-to-br from-sky-50 to-blue-50"
                   end
                 ]}>
-                  <a href={message.content} target="_blank" rel="noopener noreferrer" class="block group">
+                  <a
+                    href={message.content}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="block group"
+                  >
                     <!-- Thumbnail Container -->
                     <div class={[
                       "relative w-[250px] md:w-[320px] bg-gray-100 overflow-hidden",
@@ -149,41 +167,64 @@
                         ]}>
                           <%= case message.media_type do %>
                             <% "instagram" -> %>
-                              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                              <svg
+                                class="w-8 h-8 text-white"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                               </svg>
                             <% "tiktok" -> %>
-                              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                              <svg
+                                class="w-8 h-8 text-white"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
                               </svg>
                             <% "facebook" -> %>
-                              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                              <svg
+                                class="w-8 h-8 text-white"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                               </svg>
                             <% "twitter" -> %>
-                              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                              <svg
+                                class="w-8 h-8 text-white"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                               </svg>
                           <% end %>
                         </div>
                       </div>
                     </div>
-
                     <!-- Content Container -->
                     <div class="p-4">
                       <!-- Platform Badge -->
                       <div class={[
                         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs mb-2",
                         case message.media_type do
-                          "instagram" -> "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-600"
-                          "tiktok" -> "bg-gray-100 text-gray-600"
-                          "facebook" -> "bg-blue-100 text-blue-600"
-                          "twitter" -> "bg-sky-100 text-sky-600"
+                          "instagram" ->
+                            "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-600"
+
+                          "tiktok" ->
+                            "bg-gray-100 text-gray-600"
+
+                          "facebook" ->
+                            "bg-blue-100 text-blue-600"
+
+                          "twitter" ->
+                            "bg-sky-100 text-sky-600"
                         end
                       ]}>
-                        <span class="font-medium"><%= String.capitalize(message.media_type) %></span>
+                        <span class="font-medium">
+                          <%= String.capitalize(message.media_type) %>
+                        </span>
                       </div>
-
                       <!-- Title -->
                       <h3 class={[
                         "font-semibold text-gray-900 line-clamp-2 transition-colors",
@@ -196,13 +237,21 @@
                       ]}>
                         <%= message.title || URI.parse(message.content).host %>
                       </h3>
-
                       <!-- Visit Link -->
                       <div class="flex items-center justify-between mt-3 text-xs text-gray-500">
                         <div class="flex items-center gap-2">
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
                           </svg>
                           <span>Visit <%= String.capitalize(message.media_type) %></span>
                         </div>
@@ -210,53 +259,69 @@
                     </div>
                   </a>
                 </div>
-                
               <% message.media_type == "url" -> %>
                 <div class="rounded-2xl overflow-hidden w-[250px] md:w-[320px]  border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 bg-gradient-to-br from-gray-50 to-gray-100">
-  <a href={message.content} target="_blank" rel="noopener noreferrer" class="block group">
-    <!-- URL Icon Container -->
-    <div class="relative w-full aspect-video bg-gray-100" id={"url-preview-#{message.id}"}>
-      <div class="absolute inset-0 flex items-center justify-center transition-colors duration-500">
-        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
-          <img 
-            src={"https://www.google.com/s2/favicons?domain=#{URI.parse(message.content).host}&sz=128"}
-            alt="Website Icon"
-            class="w-6 h-6 sm:w-8 sm:h-8 object-contain"
-            id={"favicon-#{message.id}"}
-            data-target={"url-preview-#{message.id}"}
-            onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMTMuODI4IDEwLjE3MmE0IDQgMCAwMC01LjY1NiAwbC00IDRhNCA0IDAgMTA1LjY1NiA1LjY1NmwxLjEwMi0xLjEwMW0tLjc1OC00Ljg5OWE0IDQgMCAwMDUuNjU2IDBsNC00YTQgNCAwIDAwLTUuNjU2LTUuNjU2bC0xLjEgMS4xIi8+PC9zdmc+'" 
-          />
-        </div>
-      </div>
-    </div>
-                    
+                  <a
+                    href={message.content}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="block group"
+                  >
+                    <!-- URL Icon Container -->
+                    <div
+                      class="relative w-full aspect-video bg-gray-100"
+                      id={"url-preview-#{message.id}"}
+                    >
+                      <div class="absolute inset-0 flex items-center justify-center transition-colors duration-500">
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
+                          <img
+                            src={"https://www.google.com/s2/favicons?domain=#{URI.parse(message.content).host}&sz=128"}
+                            alt="Website Icon"
+                            class="w-6 h-6 sm:w-8 sm:h-8 object-contain"
+                            id={"favicon-#{message.id}"}
+                            data-target={"url-preview-#{message.id}"}
+                            onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMTMuODI4IDEwLjE3MmE0IDQgMCAwMC01LjY1NiAwbC00IDRhNCA0IDAgMTA1LjY1NiA1LjY1NmwxLjEwMi0xLjEwMW0tLjc1OC00Ljg5OWE0IDQgMCAwMDUuNjU2IDBsNC00YTQgNCAwIDAwLTUuNjU2LTUuNjU2bC0xLjEgMS4xIi8+PC9zdmc+'"
+                          />
+                        </div>
+                      </div>
+                    </div>
                     <!-- Content Container -->
                     <div class="p-4">
                       <!-- URL Badge -->
                       <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs mb-2 bg-gray-100 text-gray-600">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                          />
                         </svg>
                         <span class="font-medium">Website</span>
                       </div>
-                      
                       <!-- Title -->
                       <h3 class="font-semibold text-gray-900 line-clamp-2 group-hover:text-gray-600 transition-colors">
                         <%= message.title || URI.parse(message.content).host %>
                       </h3>
-                      
                       <!-- URL -->
                       <p class="mt-1 text-sm text-gray-500 line-clamp-1">
                         <%= URI.parse(message.content).host %>
                       </p>
-                      
                       <!-- Visit Link -->
                       <div class="flex items-center justify-between mt-3 text-xs text-gray-500">
                         <div class="flex items-center gap-2">
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
                           </svg>
                           <span>Visit Website</span>
                         </div>
@@ -264,41 +329,53 @@
                     </div>
                   </a>
                 </div>
-                
               <% message.media_type == "image" -> %>
-  <div class="relative group cursor-pointer" phx-click="show_image" phx-value-url={message.media_url}>
-    <img 
-      src={message.media_url}
-      alt="Uploaded image"
-      class="w-full max-w-[200px] xs:max-w-[240px] sm:max-w-[280px] md:max-w-[300px] lg:max-w-[320px] 
+                <div
+                  class="relative group cursor-pointer"
+                  phx-click="show_image"
+                  phx-value-url={message.media_url}
+                >
+                  <img
+                    src={message.media_url}
+                    alt="Uploaded image"
+                    class="w-full max-w-[200px] xs:max-w-[240px] sm:max-w-[280px] md:max-w-[300px] lg:max-w-[320px] 
              rounded-lg shadow-sm hover:shadow-md transition-all duration-300 
              object-cover"
-      loading="lazy" 
-    />
-    <!-- Optional zoom indicator on hover -->
-    <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
-      <div class="absolute bottom-2 right-2">
-        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-        </svg>
-      </div>
-    </div>
-  </div>
-
-<% message.media_type == "video" -> %>
-  <div class="relative group">
-    <video 
-      controls 
-      class="w-full max-w-[200px] xs:max-w-[240px] sm:max-w-[280px] md:max-w-[300px] lg:max-w-[320px]
+                    loading="lazy"
+                  />
+                  <!-- Optional zoom indicator on hover -->
+                  <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
+                    <div class="absolute bottom-2 right-2">
+                      <svg
+                        class="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              <% message.media_type == "video" -> %>
+                <div class="relative group">
+                  <video
+                    controls
+                    class="w-full max-w-[200px] xs:max-w-[240px] sm:max-w-[280px] md:max-w-[300px] lg:max-w-[320px]
              rounded-lg shadow-sm hover:shadow-md transition-all duration-300 
              bg-black"
-      preload="metadata"
-    >
-      <source src={message.media_url} type={message.content_type}>
-      Your browser does not support the video tag.
-    </video>
-    <!-- Optional play button overlay -->
-    <%!-- <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg">
+                    preload="metadata"
+                  >
+                    <source src={message.media_url} type={message.content_type} />
+                    Your browser does not support the video tag.
+                  </video>
+                  <!-- Optional play button overlay -->
+                  <%!-- <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg">
       <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
         <svg class="w-12 h-12 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -306,8 +383,7 @@
         </svg>
       </div>
     </div> --%>
-  </div>
-
+                </div>
               <% true -> %>
                 <div class={[
                   "px-4 py-2 rounded-2xl max-w-[70%]",
@@ -319,16 +395,20 @@
                     end
                   else
                     case @room.theme do
-                      "modern" -> "bg-white/50 backdrop-blur-sm from-blue-50 to-indigo-50 shadow-sm border border-gray-100/50 text-gray-900"
-                      "minimal" -> "bg-white/50 backdrop-blur-sm from-gray-50 to-gray-100 shadow-sm text-gray-900"
-                      "nature" -> "bg-white/50 backdrop-blur-sm from-green-50 to-emerald-100 shadow-sm text-gray-900"
+                      "modern" ->
+                        "bg-white/50 backdrop-blur-sm from-blue-50 to-indigo-50 shadow-sm border border-gray-100/50 text-gray-900"
+
+                      "minimal" ->
+                        "bg-white/50 backdrop-blur-sm from-gray-50 to-gray-100 shadow-sm text-gray-900"
+
+                      "nature" ->
+                        "bg-white/50 backdrop-blur-sm from-green-50 to-emerald-100 shadow-sm text-gray-900"
                     end
                   end
                 ]}>
                   <%= message.content %>
                 </div>
             <% end %>
-
             <!-- เวลาและชื่อผู้ส่ง -->
             <div class={[
               "text-xs text-gray-500",
@@ -342,7 +422,6 @@
       </div>
     </div>
   </div>
-
   <!-- Input -->
   <div class={[
     "fixed bottom-0 left-0 right-0 backdrop-blur-lg bg-white/80 p-3 sm:p-1 z-[60] transition-all duration-300",
@@ -368,47 +447,89 @@
                   <.live_img_preview entry={entry} class="w-20 h-20 object-cover rounded-lg" />
                 <% else %>
                   <div class="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      class="w-8 h-8 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                 <% end %>
 
-                <button type="button"
-                        phx-click="cancel_entry"
-                        phx-value-ref={entry.ref}
-                        class="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full 
-                               opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  type="button"
+                  phx-click="cancel_entry"
+                  phx-value-ref={entry.ref}
+                  class="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full 
+                               opacity-0 group-hover:opacity-100 transition-opacity"
+                >
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
             <% end %>
           </div>
         <% end %>
-        
         <!-- Input Controls -->
         <div class="flex items-center gap-2 sm:gap-3">
-          <button type="button" phx-click="open_emoji" class="flex-none p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all" disabled={@blocked}>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <button
+            type="button"
+            phx-click="open_emoji"
+            class="flex-none p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
+            disabled={@blocked}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 sm:h-6 sm:w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </button>
-          
+
           <label class="flex-none p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all cursor-pointer">
-  <.live_file_input 
-    upload={@uploads.media} 
-    class="hidden" 
-    accept="image/*,video/*"
-  />
-  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-</label>
+            <.live_file_input upload={@uploads.media} class="hidden" accept="image/*,video/*" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 sm:h-6 sm:w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </label>
           <div class="flex-1 relative">
             <input
               id="chat-input"
@@ -417,14 +538,22 @@
               name="message"
               maxlength="512"
               value={@current_message}
-              placeholder={if(@blocked, do: format_block_time(@block_remaining_seconds), else: "พิมพ์ข้อความ...")}
+              placeholder={
+                if(@blocked,
+                  do: format_block_time(@block_remaining_seconds),
+                  else: "พิมพ์ข้อความ..."
+                )
+              }
               class={[
                 "w-full rounded-full pl-3 sm:pl-4 pr-10 sm:pr-12 py-2 sm:py-3 border-0 focus:ring-2 transition-all text-sm sm:text-base",
                 if(@blocked,
                   do: "bg-red-50 text-red-900 placeholder-red-700 focus:ring-red-500",
                   else: [
                     "bg-gray-100 text-gray-900",
-                    if(@input_focused, do: "ring-2 ring-blue-500 bg-white", else: "focus:ring-blue-500 focus:bg-white")
+                    if(@input_focused,
+                      do: "ring-2 ring-blue-500 bg-white",
+                      else: "focus:ring-blue-500 focus:bg-white"
+                    )
                   ]
                 )
               ]}
@@ -434,23 +563,29 @@
               phx-focus="focus_input"
               phx-blur="blur_input"
             />
-            
-            <button 
+
+            <button
               type="submit"
               disabled={@blocked}
               class={[
                 "absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full transition-all",
                 if(@blocked,
                   do: "text-red-400 cursor-not-allowed",
-                  else: case @room.theme do
-                    "modern" -> "text-blue-500 hover:text-blue-600 hover:bg-blue-50"
-                    "minimal" -> "text-gray-500 hover:text-gray-600 hover:bg-gray-50"
-                    "nature" -> "text-green-500 hover:text-green-600 hover:bg-green-50"
-                  end
+                  else:
+                    case @room.theme do
+                      "modern" -> "text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                      "minimal" -> "text-gray-500 hover:text-gray-600 hover:bg-gray-50"
+                      "nature" -> "text-green-500 hover:text-green-600 hover:bg-green-50"
+                    end
                 )
               ]}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 sm:h-5 sm:w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
               </svg>
             </button>
@@ -459,29 +594,42 @@
       </.form>
     </div>
   </div>
-
   <!-- Emoji Modal -->
   <%= if @show_emoji_modal do %>
-    <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
-         phx-click="close_emoji">
-      <div class="absolute bottom-0 left-0 right-0 bg-white/90  p-4 animate-slide-up"
-           phx-click-away="close_emoji">
+    <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-50" phx-click="close_emoji">
+      <div
+        class="absolute bottom-0 left-0 right-0 bg-white/90  p-4 animate-slide-up"
+        phx-click-away="close_emoji"
+      >
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-semibold text-gray-900">เลอกอิโมจิ</h3>
-          <button type="button" 
+          <button
+            type="button"
             phx-click="close_emoji"
-            class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-            <svg class="h-4 w-4 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+          >
+            <svg
+              class="h-4 w-4 sm:h-5 sm:w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
         <div class="grid grid-cols-5 sm:grid-cols-4 gap-3 sm:gap-4">
           <%= for {_name, emoji} <- @emojis do %>
-            <button 
+            <button
               type="button"
               phx-click="select_emoji"
-              phx-value-emoji={emoji} 
+              phx-value-emoji={emoji}
               class="text-xl sm:text-2xl hover:bg-gray-100 p-2 sm:p-3 rounded-xl transition-all hover:scale-110"
             >
               <%= emoji %>
@@ -491,7 +639,6 @@
       </div>
     </div>
   <% end %>
-
   <!-- Upload Modal -->
   <%= if @uploading do %>
     <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 mb-20">
@@ -500,21 +647,25 @@
           <h3 class="text-lg font-semibold">อัพโหดไฟล์</h3>
           <button type="button" phx-click="cancel_upload" class="text-gray-500">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
 
-        <.form id="upload-form" 
-          for={%{}} 
-          phx-change="validate_upload" 
+        <.form
+          id="upload-form"
+          for={%{}}
+          phx-change="validate_upload"
           phx-submit="save_upload"
-          class="space-y-4">
-        
-
+          class="space-y-4"
+        >
           <!-- Upload Area -->
           <div class="space-y-4">
-            
             <!-- Preview Area -->
             <%= if length(@uploads.media.entries) > 0 do %>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -524,26 +675,44 @@
                       <.live_img_preview entry={entry} class="w-32 h-32 object-cover rounded-lg" />
                     <% else %>
                       <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <svg class="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg
+                          class="w-12 h-12 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                          />
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
                         </svg>
                       </div>
                     <% end %>
-
                     <!-- Cancel Button -->
-                    <button type="button"
-                            phx-click="cancel_entry"
-                            phx-value-ref={entry.ref}
-                            class="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full 
-                                   opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      phx-click="cancel_entry"
+                      phx-value-ref={entry.ref}
+                      class="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full 
+                                   opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
-
                     <!-- File Info -->
                     <div class="text-xs text-gray-500 mt-1">
                       <div class="truncate"><%= entry.client_name %></div>
@@ -553,98 +722,113 @@
                 <% end %>
               </div>
             <% end %>
-
             <!-- Error Messages -->
             <%= for err <- upload_errors(@uploads.media) do %>
               <div class="text-red-500 text-sm"><%= err %></div>
             <% end %>
-
-          
           </div>
         </.form>
       </div>
     </div>
   <% end %>
-
   <!-- Image Gallery Modal -->
   <%= if @show_gallery do %>
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
       <div class="relative">
-        <button 
+        <button
           class="absolute top-4 right-4 text-white hover:text-gray-300"
           phx-click="close_gallery"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
-        
-        <img 
-          src={@current_image} 
+
+        <img
+          src={@current_image}
           class="max-h-[90vh] max-w-[90vw] object-contain"
           alt="Gallery image"
         />
       </div>
     </div>
   <% end %>
-
   <!-- User Profile Modal -->
-<%= if @show_user_profile do %>
-  <div class="fixed inset-0 bg-black/60 backdrop-blur-md z-50">
-    <div class="fixed inset-0 z-20 overflow-y-auto">
-      <div class="flex min-h-full items-center justify-center p-4">
-        <div class="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md transform transition-all p-8 border border-white/20">
-          <!-- Close Button -->
-          <button 
-            phx-click="close_user_profile"
-            class="absolute right-4 top-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100/80 transition-all duration-200"
-          >
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          <!-- User Info -->
-          <div class="flex flex-col items-center text-center mb-8">
-            <!-- Avatar with Ring -->
-            <div class="relative mb-4">
-              <div class={[
-                "absolute inset-0 rounded-full blur-md opacity-70",
-                case @room.theme do
-                  "modern" -> "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"
-                  "minimal" -> "bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700"
-                  "nature" -> "bg-gradient-to-r from-lime-500 via-emerald-500 to-teal-500"
-                end
-              ]}></div>
-              <div class={[
-                "relative w-24 h-24 rounded-full flex items-center justify-center text-white text-6xl font-medium shadow-xl border-4 border-white",
-                case @room.theme do
-                  "modern" -> "bg-gradient-to-r from-blue-600 to-indigo-600"
-                  "minimal" -> "bg-gradient-to-r from-gray-600 to-gray-700"
-                  "nature" -> "bg-gradient-to-r from-lime-500 to-emerald-600"
-                end
-              ]}>
-                <%= @selected_user.avatar %>
+  <%= if @show_user_profile do %>
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-md z-50">
+      <div class="fixed inset-0 z-20 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+          <div class="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md transform transition-all p-8 border border-white/20">
+            <!-- Close Button -->
+            <button
+              phx-click="close_user_profile"
+              class="absolute right-4 top-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100/80 transition-all duration-200"
+            >
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <!-- User Info -->
+            <div class="flex flex-col items-center text-center mb-8">
+              <!-- Avatar with Ring -->
+              <div class="relative mb-4">
+                <div class={[
+                  "absolute inset-0 rounded-full blur-md opacity-70",
+                  case @room.theme do
+                    "modern" -> "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"
+                    "minimal" -> "bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700"
+                    "nature" -> "bg-gradient-to-r from-lime-500 via-emerald-500 to-teal-500"
+                  end
+                ]}>
+                </div>
+                <div class={[
+                  "relative w-24 h-24 rounded-full flex items-center justify-center text-white text-6xl font-medium shadow-xl border-4 border-white",
+                  case @room.theme do
+                    "modern" -> "bg-gradient-to-r from-blue-600 to-indigo-600"
+                    "minimal" -> "bg-gradient-to-r from-gray-600 to-gray-700"
+                    "nature" -> "bg-gradient-to-r from-lime-500 to-emerald-600"
+                  end
+                ]}>
+                  <%= @selected_user.avatar %>
+                </div>
+              </div>
+              <!-- User Details -->
+              <div class="space-y-2">
+                <h3 class="text-xl font-bold text-gray-900 tracking-tight">
+                  <%= @selected_user.name %>
+                </h3>
+                <div class="flex items-center justify-center gap-2 text-sm text-gray-500">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span>
+                    เข้าร่วมเมื่อ <%= Calendar.strftime(@selected_user.joined_at, "%d/%m/%Y") %>
+                  </span>
+                </div>
               </div>
             </div>
-            
-            <!-- User Details -->
-            <div class="space-y-2">
-              <h3 class="text-xl font-bold text-gray-900 tracking-tight">
-                <%= @selected_user.name %>
-              </h3>
-              <div class="flex items-center justify-center gap-2 text-sm text-gray-500">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span>เข้าร่วมเมื่อ <%= Calendar.strftime(@selected_user.joined_at, "%d/%m/%Y") %></span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Stats -->
-          <%!-- <div class="grid grid-cols-3 gap-4 mb-8">
+            <!-- Stats -->
+            <%!-- <div class="grid grid-cols-3 gap-4 mb-8">
             <%= for {label, value} <- [{"ข้อความ", "150"}, {"ห้องสนทนา", "12"}, {"วันที่ใช้งาน", "30"}] do %>
               <div class={[
                 "text-center p-4 rounded-2xl backdrop-blur-sm",
@@ -659,50 +843,66 @@
               </div>
             <% end %>
           </div> --%>
+            <!-- Action Buttons -->
+            <div class="space-y-3">
+              <button
+                phx-click="start_direct_message"
+                phx-value-user-name={@selected_user.name}
+                class={[
+                  "w-full px-6 py-3 text-sm font-medium text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-2",
+                  case @room.theme do
+                    "modern" ->
+                      "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 focus:ring-blue-500"
 
-          <!-- Action Buttons -->
-          <div class="space-y-3">
-            <button
-              phx-click="start_direct_message"
-              phx-value-user-name={@selected_user.name}
-              class={[
-                "w-full px-6 py-3 text-sm font-medium text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-2",
-                case @room.theme do
-                  "modern" -> "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 focus:ring-blue-500"
-                  "minimal" -> "bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 hover:from-gray-700 hover:via-gray-800 hover:to-gray-900 focus:ring-gray-500"
-                  "nature" -> "bg-gradient-to-r from-lime-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 focus:ring-green-500"
-                end
-              ]}
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <span>ส่งข้อความส่วนตัว</span>
-            </button>
+                    "minimal" ->
+                      "bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 hover:from-gray-700 hover:via-gray-800 hover:to-gray-900 focus:ring-gray-500"
 
-            <!-- Additional Action Button -->
-            <button
-              type="button"
-              class={[
-                "w-full px-6 py-3 text-sm font-medium rounded-xl border focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center gap-2",
-                case @room.theme do
-                  "modern" -> "text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200 focus:ring-blue-200"
-                  "minimal" -> "text-gray-700 bg-gray-50 hover:bg-gray-100 border-gray-200 focus:ring-gray-200"
-                  "nature" -> "text-green-700 bg-lime-50 hover:bg-lime-100 border-lime-200 focus:ring-lime-200"
-                end
-              ]}
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              <span>เพิ่มเป็นเพื่อน</span>
-            </button>
+                    "nature" ->
+                      "bg-gradient-to-r from-lime-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 focus:ring-green-500"
+                  end
+                ]}
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                <span>ส่งข้อความส่วนตัว</span>
+              </button>
+              <!-- Additional Action Button -->
+              <button
+                type="button"
+                class={[
+                  "w-full px-6 py-3 text-sm font-medium rounded-xl border focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center gap-2",
+                  case @room.theme do
+                    "modern" ->
+                      "text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200 focus:ring-blue-200"
+
+                    "minimal" ->
+                      "text-gray-700 bg-gray-50 hover:bg-gray-100 border-gray-200 focus:ring-gray-200"
+
+                    "nature" ->
+                      "text-green-700 bg-lime-50 hover:bg-lime-100 border-lime-200 focus:ring-lime-200"
+                  end
+                ]}
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                  />
+                </svg>
+                <span>เพิ่มเป็นเพื่อน</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-<% end %>
+  <% end %>
 </div>

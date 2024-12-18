@@ -21,7 +21,8 @@ defmodule ExamplePhoenix.Emojis do
   def get_emoji(name) do
     case List.keyfind(@emojis, name, 0) do
       {_, emoji} -> emoji
-      nil -> "😊" # default emoji
+      # default emoji
+      nil -> "😊"
     end
   end
 end

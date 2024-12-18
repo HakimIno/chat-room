@@ -3,10 +3,14 @@ defmodule ExamplePhoenix.Accounts.RateLimit do
   alias ExamplePhoenix.Repo
   alias ExamplePhoenix.Accounts.Block
 
-  @max_messages_per_minute 10  # จำนวนข้อความสูงสุดต่อนาที
-  @min_interval 3  # ระยะห่างขั้นต่ำระหว่างข้อความ (วินาที)
-  @initial_block_duration 120  # ระยะเวลาแบนเริ่มต้น (2 นาที)
-  @max_block_duration 86_400  # ระยะเวลาแบนสูงสุด (24 ชั่วโมง)
+  # จำนวนข้อความสูงสุดต่อนาที
+  @max_messages_per_minute 10
+  # ระยะห่างขั้นต่ำระหว่างข้อความ (วินาที)
+  @min_interval 3
+  # ระยะเวลาแบนเริ่มต้น (2 นาที)
+  @initial_block_duration 120
+  # ระยะเวลาแบนสูงสุด (24 ชั่วโมง)
+  @max_block_duration 86_400
 
   def check_rate_limit(ip_address) do
     check_rate_limit_for_ip(ip_address)
@@ -19,6 +23,7 @@ defmodule ExamplePhoenix.Accounts.RateLimit do
     case get_active_block(ip_address) do
       nil ->
         check_message_rate(ip_address, now)
+
       block ->
         {:error, NaiveDateTime.diff(block.expires_at, now)}
     end
@@ -27,12 +32,15 @@ defmodule ExamplePhoenix.Accounts.RateLimit do
   defp check_message_rate(ip_address, now) do
     one_minute_ago = NaiveDateTime.add(now, -60)
 
-    recent_messages = from(m in ExamplePhoenix.Chat.Message,
-      where: m.user_ip == ^ip_address and
-             m.inserted_at > ^one_minute_ago,
-      order_by: [desc: :inserted_at],
-      select: m.inserted_at
-    ) |> Repo.all()
+    recent_messages =
+      from(m in ExamplePhoenix.Chat.Message,
+        where:
+          m.user_ip == ^ip_address and
+            m.inserted_at > ^one_minute_ago,
+        order_by: [desc: :inserted_at],
+        select: m.inserted_at
+      )
+      |> Repo.all()
 
     cond do
       length(recent_messages) >= @max_messages_per_minute ->
@@ -41,7 +49,7 @@ defmodule ExamplePhoenix.Accounts.RateLimit do
         {:error, block_duration}
 
       length(recent_messages) > 0 and
-      NaiveDateTime.diff(now, hd(recent_messages)) < @min_interval ->
+          NaiveDateTime.diff(now, hd(recent_messages)) < @min_interval ->
         block_duration = calculate_block_duration(ip_address)
         create_block(ip_address, block_duration)
         {:error, block_duration}
@@ -53,7 +61,9 @@ defmodule ExamplePhoenix.Accounts.RateLimit do
 
   defp calculate_block_duration(ip_address) do
     case get_previous_blocks_count(ip_address) do
-      0 -> @initial_block_duration
+      0 ->
+        @initial_block_duration
+
       count ->
         min(@initial_block_duration * round(:math.pow(2, count)), @max_block_duration)
     end
@@ -63,8 +73,9 @@ defmodule ExamplePhoenix.Accounts.RateLimit do
     one_day_ago = NaiveDateTime.utc_now() |> NaiveDateTime.add(-86_400)
 
     from(b in Block,
-      where: b.ip_address == ^ip_address and
-             b.inserted_at > ^one_day_ago
+      where:
+        b.ip_address == ^ip_address and
+          b.inserted_at > ^one_day_ago
     )
     |> Repo.aggregate(:count)
   end
@@ -73,11 +84,13 @@ defmodule ExamplePhoenix.Accounts.RateLimit do
     now = NaiveDateTime.utc_now()
 
     from(b in Block,
-      where: b.ip_address == ^ip_address and
-             b.expires_at > ^now,
+      where:
+        b.ip_address == ^ip_address and
+          b.expires_at > ^now,
       order_by: [desc: :expires_at],
       limit: 1
-    ) |> Repo.one()
+    )
+    |> Repo.one()
   end
 
   def create_block(ip_address, duration) do
@@ -113,6 +126,7 @@ defmodule ExamplePhoenix.Accounts.RateLimit do
       where: b.ip_address == ^ip_address,
       order_by: [desc: :inserted_at],
       limit: 1
-    ) |> Repo.one()
+    )
+    |> Repo.one()
   end
 end

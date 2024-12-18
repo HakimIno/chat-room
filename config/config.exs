@@ -43,13 +43,19 @@ config :esbuild,
 
 # Configure Hammer for rate limiting
 config :hammer,
-  backend: {Hammer.Backend.ETS, [
-    expiry_ms: 60_000 * 60 * 4,    # 4 hours
-    cleanup_interval_ms: 60_000 * 10  # 10 minutes
-  ]},
+  backend:
+    {Hammer.Backend.ETS,
+     [
+       # 4 hours
+       expiry_ms: 60_000 * 60 * 4,
+       # 10 minutes
+       cleanup_interval_ms: 60_000 * 10
+     ]},
   link_preview_limits: [
-    scale_ms: 60_000,              # 1 minute
-    limit: 30                      # 30 requests per minute
+    # 1 minute
+    scale_ms: 60_000,
+    # 30 requests per minute
+    limit: 30
   ]
 
 # Configure Oban
@@ -58,7 +64,8 @@ config :example_phoenix, Oban,
   plugins: [Oban.Plugins.Pruner],
   queues: [
     default: 10,
-    link_preview: 5  # เพิ่ม queue สำหรับ link preview
+    # เพิ่ม queue สำหรับ link preview
+    link_preview: 5
   ]
 
 # Configure tailwind (the version is required)
@@ -84,6 +91,7 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+
 config :ex_aws,
   access_key_id: "522e5650436a033ffd13c065884753ff",
   secret_access_key: "446af8c0c1ebe72fe450a51aad53666fc26bf27ef93592ecd85cf5ae243745eb",
@@ -113,13 +121,18 @@ config :example_phoenix, :cache,
 
 # Link Preview Configuration
 config :example_phoenix, :link_preview,
-  max_file_size: 10_000_000,  # 10MB
-  timeout: 5_000,             # 5 seconds
+  # 10MB
+  max_file_size: 10_000_000,
+  # 5 seconds
+  timeout: 5_000,
   allowed_domains: [
-    "youtube.com", "youtu.be",
-    "facebook.com", "fb.com",
+    "youtube.com",
+    "youtu.be",
+    "facebook.com",
+    "fb.com",
     "instagram.com",
-    "twitter.com", "x.com",
+    "twitter.com",
+    "x.com",
     "github.com",
     "linkedin.com"
   ],

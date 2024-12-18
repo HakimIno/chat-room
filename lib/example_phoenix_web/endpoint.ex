@@ -62,8 +62,10 @@ defmodule ExamplePhoenixWeb.Endpoint do
 
   # CORS configuration
   plug CORSPlug,
-    origin: ["http://localhost:4000", "https://lyra.fly.dev"],  # เพิ่ม domain ที่อนุญาตตามที่ต้องการ
-    max_age: 86400,  # 24 hours
+    # เพิ่ม domain ที่อนุญาตตามที่ต้องการ
+    origin: ["http://localhost:4000", "https://lyra.fly.dev"],
+    # 24 hours
+    max_age: 86400,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     headers: ["Authorization", "Content-Type", "Accept", "Origin", "User-Agent"]
 

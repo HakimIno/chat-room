@@ -4,17 +4,18 @@ defmodule ExamplePhoenixWeb.Router do
   @security_headers %{
     "content-security-policy" =>
       "default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https:; " <>
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " <>
-      "style-src 'self' 'unsafe-inline' https:; " <>
-      "img-src 'self' blob: data: https: *; " <>
-      "font-src 'self' data: https:; " <>
-      "connect-src 'self' https: wss:; " <>
-      "frame-src *; " <>
-      "worker-src 'self' blob: https:; " <>
-      "media-src 'self' blob: https:; " <>
-      "object-src 'none'; " <>
-      "base-uri 'self';",
-    "permissions-policy" => "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " <>
+        "style-src 'self' 'unsafe-inline' https:; " <>
+        "img-src 'self' blob: data: https: *; " <>
+        "font-src 'self' data: https:; " <>
+        "connect-src 'self' https: wss:; " <>
+        "frame-src *; " <>
+        "worker-src 'self' blob: https:; " <>
+        "media-src 'self' blob: https:; " <>
+        "object-src 'none'; " <>
+        "base-uri 'self';",
+    "permissions-policy" =>
+      "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()",
     "x-frame-options" => "ALLOWALL",
     "x-content-type-options" => "nosniff",
     "x-xss-protection" => "1; mode=block",

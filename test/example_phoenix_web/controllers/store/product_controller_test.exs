@@ -4,7 +4,11 @@ defmodule ExamplePhoenixWeb.Store.ProductControllerTest do
   import ExamplePhoenix.StoreFixtures
 
   @create_attrs %{name: "some name", description: "some description", price: "120.5"}
-  @update_attrs %{name: "some updated name", description: "some updated description", price: "456.7"}
+  @update_attrs %{
+    name: "some updated name",
+    description: "some updated description",
+    price: "456.7"
+  }
   @invalid_attrs %{name: nil, description: nil, price: nil}
 
   describe "index" do
