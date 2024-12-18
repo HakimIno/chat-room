@@ -317,24 +317,24 @@ defmodule ExamplePhoenix.Chat do
     |> Enum.any?()
   end
 
-  def create_or_get_dm_room(user1, user2) do
-    # สร้าง unique dm_room_id จากชื่อผู้ใช้ทั้งสอง (เรียงตามตัวอักษร)
-    [sorted_user1, sorted_user2] = Enum.sort([user1, user2])
-    dm_room_id = "dm_#{sorted_user1}_#{sorted_user2}"
+  def create_or_get_dm_room(current_user, target_user) do
+    dm_room_id = "dm_#{target_user}_#{current_user}"
+
+    params = %{
+      "name" => "DM: #{current_user} & #{target_user}",
+      "category" => "dm",
+      "is_private" => true,
+      "theme" => "modern",
+      "creator_id" => current_user,
+      "dm_room_id" => dm_room_id,
+      "participants" => [current_user, target_user]
+    }
 
     case Repo.get_by(Room, dm_room_id: dm_room_id) do
       nil ->
         # ถ้ายังไม่มีห้อง ให้สร้างใหม่
         %Room{}
-        |> Room.changeset(%{
-          name: "DM: #{user1} & #{user2}",
-          category: "dm",
-          is_private: true,
-          creator_id: user1,
-          dm_room_id: dm_room_id,
-          participants: [user1, user2],
-          theme: "modern"
-        })
+        |> Room.changeset(params)
         |> Repo.insert()
 
       room ->
