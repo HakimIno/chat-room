@@ -8,18 +8,26 @@
 
 <%# Loading Screen %>
 <div class={[
-  "fixed inset-0 z-50 backdrop-blur-sm transition-all duration-500 flex items-center justify-center",
+  "fixed inset-0 z-50 backdrop-blur-sm transition-all duration-500 flex items-center justify-center w-full h-full bg-black/10",
   if(@loading_auth, do: "opacity-100", else: "opacity-0 pointer-events-none")
 ]}>
-  <div class="bg-white/30 dark:bg-gray-800/30 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/20">
-    <div class="flex flex-col items-center gap-4">
-      <div class="relative">
-        <div class="w-12 h-12 rounded-full border-[3px] border-indigo-600/30"></div>
-        <div class="absolute inset-0 w-12 h-12 rounded-full border-t-[3px] border-indigo-600 animate-spin"></div>
+      <!-- Cute Robot Animation Container -->
+     <div class="flex items-center justify-center w-full mr-14 mb-6">
+        <div class="relative w-20 h-20 flex flex-col items-center gap-4">
+          <!-- Robot Head -->
+          <div class="absolute w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl left-1/2 -translate-x-1/2 top-0 shadow-lg animate-float">
+            <!-- Eyes -->
+            <div class="absolute top-3.5 left-2.5 w-2.5 h-2.5 bg-white rounded-full"></div>
+            <div class="absolute top-3.5 right-2.5 w-2.5 h-2.5 bg-white rounded-full"></div>
+            <!-- Antenna -->
+            <div class="absolute -top-2.5 left-1/2 w-1.5 h-3 bg-indigo-300 origin-bottom animate-wiggle">
+              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-indigo-400 rounded-full animate-pulse"></div>
+            </div>
+            <!-- Smile -->
+            <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-white rounded-full"></div>
+          </div>
+        </div>
       </div>
-      <p class="text-gray-900 dark:text-white font-medium">กำลังโหลด...</p>
-    </div>
-  </div>
 </div>
 
 <%# Password Modal %>
@@ -524,7 +532,7 @@ case @room.theme do
                   <%= message.content %>
                 </div>
             <% end %>
-            <!-- ��วลาและชื่อผู้สง -->
+            <!-- วลาและชื่อผู้สง -->
             <div class={[
               "text-xs text-gray-500",
               if(message.user_name == @current_user, do: "text-right", else: "text-left")
