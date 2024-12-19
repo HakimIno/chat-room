@@ -23,9 +23,13 @@ import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import Uploads from "./hooks/upload"
 import KeyboardHook from "./hooks/keyboard"
+import RoomHooks from "./hooks"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+
+// รวม hooks ทั้งหมด
 let Hooks = {
+  ...RoomHooks,  // เพิ่ม hooks จากไฟล์ hooks.js
   Keyboard: KeyboardHook,
   MessageInput: {
     mounted() {
@@ -71,10 +75,7 @@ let Hooks = {
 
 let liveSocket = new LiveSocket("/live", Socket, {
   params: {_csrf_token: csrfToken},
-  hooks: {
-    ScrollChat: Hooks.ScrollChat,
-    Uploads: Uploads
-  }
+  hooks: Hooks
 })
 
 // Show progress bar on live navigation and form submits

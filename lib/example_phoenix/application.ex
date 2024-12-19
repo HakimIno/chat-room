@@ -7,6 +7,10 @@ defmodule ExamplePhoenix.Application do
     # Load .env file if it exists
     if File.exists?(".env"), do: Dotenv.load()
 
+    # สร้าง ETS tables
+    :ets.new(:room_blocks, [:set, :public, :named_table])
+    :ets.new(:room_attempts, [:set, :public, :named_table])
+
     children = [
       ExamplePhoenix.Repo,
       ExamplePhoenixWeb.Telemetry,

@@ -71,17 +71,31 @@ defmodule ExamplePhoenix.Chat.Room do
 
   defp validate_password_if_private(changeset) do
     is_private = get_field(changeset, :is_private)
-    is_dm = get_field(changeset, :category) == "dm"
+    password = get_field(changeset, :password)
 
     cond do
-      is_dm ->
-        changeset
+      is_private && (is_nil(password) || password == "") ->
+        add_error(changeset, :password, "ห้องส่วนตัวต้องมีรหัสผ่าน")
 
-      is_private ->
-        validate_required(changeset, [:password])
+      is_private && !is_nil(password) ->
+        validate_length(changeset, :password, min: 4,
+          message: "รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร")
 
       true ->
         changeset
+    end
+  end
+
+  def verify_room_password(room, password) do
+    cond do
+      !room.is_private ->
+        {:ok, room}
+
+      room.is_private && room.password == password ->
+        {:ok, room}
+
+      true ->
+        {:error, :invalid_password}
     end
   end
 end

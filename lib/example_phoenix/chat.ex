@@ -16,11 +16,17 @@ defmodule ExamplePhoenix.Chat do
     Repo.all(Room)
   end
 
-  def get_room(id) do
+  def get_room(id) when is_binary(id) do
     case Repo.get(Room, id) do
-      nil -> {:error, :not_found}
-      room -> {:ok, room}
+      nil -> nil
+      room -> room
     end
+  end
+
+  def get_room(id) when is_integer(id) do
+    id
+    |> to_string()
+    |> get_room()
   end
 
   def get_room!(id) do
@@ -226,7 +232,7 @@ defmodule ExamplePhoenix.Chat do
 
     case Cachex.get(:my_cache, cache_key) do
       {:ok, nil} ->
-        # ถ้าไม่มีใน cache ให้ดึงข้อมูลใหม่
+        # ถ้าไม่มีใน cache ให���ดึงข้อมูลใหม่
         metadata = fetch_url_metadata(url)
         Cachex.put(:my_cache, cache_key, metadata, ttl: @cache_ttl)
         metadata

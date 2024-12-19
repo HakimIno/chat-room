@@ -39,80 +39,189 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(ExamplePhoenix.PubSub, "room:" <> id)
+    end
+
     case Chat.get_room(id) do
-      {:ok, room} ->
-        current_user = session["user_name"]
-
-        # ตรวจสอบสิทธิ์การเข้าถึงห้อง DM
-        if room.category == "dm" && current_user not in room.participants do
-          {:ok,
-           socket
-           |> put_flash(:error, "คุณไม่มีสิทธิ์เข้าถึงห้องสนทนานี้")
-           |> redirect(to: ~p"/")}
-        else
-          if connected?(socket) do
-            Phoenix.PubSub.subscribe(ExamplePhoenix.PubSub, "room:#{id}")
-          end
-
-          case Chat.get_room(id) do
-            {:ok, room} ->
-              if connected?(socket) do
-                ExamplePhoenixWeb.Endpoint.subscribe("room:#{room.id}")
-              end
-
-              client_ip = get_client_ip(socket)
-              messages = Chat.list_messages(room.id)
-
-              socket =
-                socket
-                |> assign(:current_user, session["user_name"])
-                |> assign(:current_user_avatar, session["user_avatar"])
-                |> assign(:room, room)
-                |> assign(:blocked, false)
-                |> assign(:block_remaining_seconds, 0)
-                |> assign(:client_ip, client_ip)
-                |> assign(:current_message, "")
-                |> assign(:message_ids, messages |> Enum.map(& &1.id) |> MapSet.new())
-                |> stream(:messages, messages)
-                |> assign(:show_emoji_modal, false)
-                |> assign(:show_gallery, false)
-                |> assign(:current_image, nil)
-                |> assign(:uploading, false)
-                |> assign(:upload_valid, false)
-                |> assign(:input_focused, false)
-                |> allow_upload(:media, @upload_options)
-                |> assign(:emojis, @emojis)
-                |> assign(:show_user_profile, false)
-                |> assign(:selected_user, nil)
-
-              if connected?(socket) do
-                check_block_status(socket)
-              end
-
-              {:ok, socket}
-              {:ok, assign(socket, message: "")}
-
-            {:error, _reason} ->
-              {:ok,
-               socket
-               |> put_flash(:error, "ห้องสนทนาไม่มีอยู่")
-               |> redirect(to: ~p"/")}
-          end
-        end
-
-      {:error, _reason} ->
+      nil ->
         {:ok,
          socket
-         |> put_flash(:error, "ห้องสนทนาไม่มีอยู่")
-         |> redirect(to: ~p"/")}
+         |> put_flash(:error, "ไม่พบห้องที่คุณต้องการ")
+         |> redirect(to: ~p"/chat")}
+
+      room ->
+        is_private = room.is_private
+        user_name = session["user_name"]
+
+        # ตรวจสอบเวลาที่เหลือในการรอ (ถ้ามี)
+        remaining_time = get_remaining_block_time(room.id, user_name)
+
+        if connected?(socket), do: Process.send_after(self(), :hide_loading, 500)
+
+        {:ok,
+         socket
+         |> assign(:room, room)
+         |> assign(:room_id, id)
+         |> assign(:selected_room_id, id)
+         |> assign(:current_user, user_name)
+         |> assign(:current_user_avatar, session["user_avatar"])
+         |> assign(:show_password_modal, is_private && remaining_time == 0)
+         |> assign(:loading_auth, true)
+         |> assign(:authenticated, !is_private)
+         |> assign(:blocked, remaining_time > 0)
+         |> assign(:block_remaining_seconds, remaining_time)
+         |> assign(:show_emoji_modal, false)
+         |> assign(:show_gallery, false)
+         |> assign(:show_user_profile, false)
+         |> assign(:input_focused, false)
+         |> assign(:uploading, false)
+         |> assign(:current_message, "")
+         |> assign(:message_ids, MapSet.new())
+         |> allow_upload(:media, @upload_options)
+         |> stream(:messages, [])}
     end
+  end
+
+  @impl true
+  def handle_event("verify_password", %{"password" => password}, socket) do
+    room_id = socket.assigns.room_id
+    user_name = socket.assigns.current_user
+
+    if password == socket.assigns.room.password do
+      messages = Chat.list_messages(room_id)
+      message_ids = messages |> Enum.map(& &1.id) |> MapSet.new()
+
+      # เคลียร์ข้อมูลการบล็อก (ถ้ามี)
+      clear_block_data(room_id, user_name)
+
+      {:noreply,
+       socket
+       |> assign(:show_password_modal, false)
+       |> assign(:authenticated, true)
+       |> assign(:message_ids, message_ids)
+       |> stream(:messages, messages)
+       |> push_event("save_auth", %{room_id: room_id})}
+    else
+      # เพิ่มจำนวนครั้งที่ใส่รหัสผิด
+      attempt_count = increment_failed_attempts(room_id, user_name)
+
+      if attempt_count >= 3 do
+        # บล็อกการใส่รหัสเป็นเวลา 5 นาที
+        block_until = DateTime.add(DateTime.utc_now(), 300, :second)
+        set_block_time(room_id, user_name, block_until)
+
+        {:noreply,
+         socket
+         |> assign(:show_password_modal, false)
+         |> assign(:blocked, true)
+         |> assign(:block_remaining_seconds, 300)
+         |> put_flash(:error, "คุณใส่รหัสผิดเกิน 3 ครั้ง กรุณารอ 5 นาทีแล้วลองใหม่อีกครั้ง")}
+      else
+        remaining_attempts = 3 - attempt_count
+        {:noreply,
+         socket
+         |> put_flash(:error, "รหัสผ่านไม่ถูกต้อง เหลือโอกาสอีก #{remaining_attempts} ครั้ง")}
+      end
+    end
+  end
+
+  # ฟังก์ชันสำหรับจัดการการบล็อก
+  defp get_remaining_block_time(room_id, user_name) do
+    key = "block:#{room_id}:#{user_name}"
+    try do
+      case :ets.lookup(:room_blocks, key) do
+        [{^key, block_until}] ->
+          now = DateTime.utc_now()
+          if DateTime.compare(block_until, now) == :gt do
+            DateTime.diff(block_until, now)
+          else
+            :ets.delete(:room_blocks, key)
+            0
+          end
+        [] -> 0
+      end
+    rescue
+      ArgumentError -> 0
+    end
+  end
+
+  defp increment_failed_attempts(room_id, user_name) do
+    try do
+      key = "attempts:#{room_id}:#{user_name}"
+      case :ets.lookup(:room_attempts, key) do
+        [{^key, count}] ->
+          new_count = count + 1
+          :ets.insert(:room_attempts, {key, new_count})
+          new_count
+        [] ->
+          :ets.insert(:room_attempts, {key, 1})
+          1
+      end
+    rescue
+      ArgumentError -> 1
+    end
+  end
+
+  defp set_block_time(room_id, user_name, block_until) do
+    try do
+      key = "block:#{room_id}:#{user_name}"
+      :ets.insert(:room_blocks, {key, block_until})
+      # เคลียร์จำนวนครั้งที่ใส่รหัสผิด
+      :ets.delete(:room_attempts, "attempts:#{room_id}:#{user_name}")
+    rescue
+      ArgumentError -> :ok
+    end
+  end
+
+  defp clear_block_data(room_id, user_name) do
+    try do
+      :ets.delete(:room_blocks, "block:#{room_id}:#{user_name}")
+      :ets.delete(:room_attempts, "attempts:#{room_id}:#{user_name}")
+    rescue
+      ArgumentError -> :ok
+    end
+  end
+
+  # เพิ่ม GenServer callback เพื่อสร้าง ETS tables เมื่อ application เริ่มต้น
+  @impl true
+  def init(_) do
+    :ets.new(:room_blocks, [:set, :public, :named_table])
+    :ets.new(:room_attempts, [:set, :public, :named_table])
+    {:ok, %{}}
+  end
+
+  # ตั้งเวลาอัพเดทเวลาที่เหลือทุกวินาที
+  @impl true
+  def handle_info(:update_block_timer, socket) do
+    if socket.assigns.blocked do
+      remaining = get_remaining_block_time(socket.assigns.room_id, socket.assigns.current_user)
+
+      if remaining > 0 do
+        Process.send_after(self(), :update_block_timer, 1000)
+        {:noreply, assign(socket, :block_remaining_seconds, remaining)}
+      else
+        {:noreply,
+         socket
+         |> assign(:blocked, false)
+         |> assign(:block_remaining_seconds, 0)
+         |> assign(:show_password_modal, true)}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("redirect_to_rooms", _params, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/chat")}
   end
 
   @impl true
   def handle_event("logout", _params, socket) do
     {:noreply,
      socket
-     |> put_flash(:info, "ออกจากห้องสนทนา")
+     |> put_flash(:info, "ออกจากห้องสนท��า")
      |> redirect(to: ~p"/auth")}
   end
 
@@ -1144,7 +1253,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
     end
   end
 
-  # ปรับปรุงฟังก์ชัน handle_uploaded_file
+  # ปรับปร��งฟังก์ชัน handle_uploaded_file
   defp handle_uploaded_file(path, entry) do
     Logger.info("Handling file upload: #{entry.client_name}")
 
@@ -1239,7 +1348,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   defp handle_upload_error(socket, error) do
     error_message =
       case error do
-        :too_large -> "ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 20MB)"
+        :too_large -> "ไฟล์มีขนาดใหญ่กินไป (สูงสุด 20MB)"
         :too_many_files -> "สามารถอัพโหลดได้ครั้งละ 1 ไฟล์เท่านั้น"
         message when is_binary(message) -> message
         _ -> "เกิดข้อผิดพลาดในการอัพโหลด กรุณาลองใหม่อีกครั้ง"
@@ -1348,7 +1457,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
     end
   end
 
-  # อาจจะใช้ YouTube API เพื่อดึงชื่อวิดีโอ (ต้องมี API key)
+  # อาจจะใช YouTube API เพื่อดึงชื่อวิดีโอ (ต้องมี API key)
   defp get_youtube_title(_video_id) do
     # TODO: Implement YouTube API call
     # ค่าเริ่มต้น
@@ -1539,7 +1648,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
 
   # สำหรับ Twitter/X URLs
   defp handle_twitter_url(url) do
-    # เนื่องจาก Twitter/X ต้องการ API key จึงส่งกลับแบบพื้นฐาน
+    # เนื่องจาก Twitter/X ต้องการ API key จงส่งกลับแบบพื้นฐาน
     {:ok,
      %{
        title: "Twitter Post",
@@ -1552,7 +1661,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   # ฟังก์ชันที่มีอยู่แล้ว แต่เพิ่มเติมการจัดการ error
   defp extract_youtube_id(url) do
     patterns = [
-      ~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+      ~r/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
       ~r/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
       ~r/youtube\.com\/v\/([a-zA-Z0-9_-]+)/
     ]
@@ -1582,5 +1691,51 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
     Enum.any?(socket.assigns.uploads.media.entries, fn entry ->
       not entry.done?
     end)
+  end
+
+  # เพิ่ม event handlers สำหรับ gallery
+  @impl true
+  def handle_event("toggle_gallery", _params, socket) do
+    {:noreply, assign(socket, :show_gallery, !socket.assigns.show_gallery)}
+  end
+
+  # เพิ่ม event handlers สำหรับ user profile
+  @impl true
+  def handle_event("toggle_user_profile", _params, socket) do
+    {:noreply, assign(socket, :show_user_profile, !socket.assigns.show_user_profile)}
+  end
+
+  # เพิ่ม handle_event สำหรับ auth_status
+  @impl true
+  def handle_event("auth_status", %{"authenticated" => true, "room_id" => room_id}, socket) do
+    if socket.assigns.room_id == room_id do
+      messages = Chat.list_messages(room_id)
+      message_ids = messages |> Enum.map(& &1.id) |> MapSet.new()
+
+      Process.send_after(self(), :hide_loading, 500)
+
+      {:noreply,
+       socket
+       |> assign(:show_password_modal, false)
+       |> assign(:loading_auth, false)
+       |> assign(:authenticated, true)
+       |> assign(:message_ids, message_ids)
+       |> stream(:messages, messages)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("auth_status", %{"authenticated" => false}, socket) do
+    {:noreply,
+     socket
+     |> assign(:loading_auth, false)
+     |> assign(:show_password_modal, true)}
+  end
+
+  # เพิ่ม handle_info สำหรับซ่อน loading
+  @impl true
+  def handle_info(:hide_loading, socket) do
+    {:noreply, assign(socket, :loading_auth, false)}
   end
 end

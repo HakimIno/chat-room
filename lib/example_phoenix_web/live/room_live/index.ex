@@ -75,18 +75,14 @@ defmodule ExamplePhoenixWeb.RoomLive.Index do
      |> assign(:selected_room_id, nil)}
   end
 
-  def handle_event("join_private_room", %{"room_id" => room_id, "password" => password}, socket) do
-    case Chat.join_room(room_id, password) do
-      {:ok, _room} ->
-        {:noreply,
-         socket
-         |> push_navigate(to: ~p"/chat/#{room_id}")}
+  @impl true
+  def handle_event("join_room", %{"room-id" => room_id}, socket) do
+    case Chat.get_room(room_id) do
+      nil ->
+        {:noreply, put_flash(socket, :error, "ไม่พบห้องที่คุณต้องการ")}
 
-      {:error, :invalid_password} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "รหัผ่านไม่ถูกต้อง")
-         |> assign(:show_password_modal, true)}
+      room ->
+        {:noreply, push_navigate(socket, to: ~p"/chat/#{room_id}")}
     end
   end
 
@@ -156,7 +152,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Index do
          |> assign(:rooms, Chat.list_rooms())}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        # Debug log ��ำหรับ error
+        # Debug log สำหรับ error
         IO.inspect(changeset.errors, label: "Validation errors")
 
         {:noreply,

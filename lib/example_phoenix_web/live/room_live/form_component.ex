@@ -245,12 +245,21 @@ defmodule ExamplePhoenixWeb.ChatLive.FormComponent do
   end
 
   @impl true
-  def handle_event("toggle_private", _params, socket) do
-    is_private = !socket.assigns.show_password_field
+  def handle_event("toggle_private", params, socket) do
+    is_private =
+      case params do
+        %{"value" => %{"value" => value}} -> value == "true"
+        %{"value" => value} -> value == "true"
+        _ -> !socket.assigns.show_password_field
+      end
 
+    # สร้าง changeset ด้วย string keys เท่านั้น
     changeset =
       socket.assigns.room
-      |> Chat.change_room(%{is_private: is_private})
+      |> Chat.change_room(%{
+        "is_private" => is_private,
+        "password" => nil
+      })
 
     {:noreply,
      socket
