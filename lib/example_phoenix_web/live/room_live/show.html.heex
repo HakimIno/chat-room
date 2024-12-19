@@ -733,12 +733,12 @@ case @room.theme do
   ]}>
     <div class="absolute inset-0 -top-screen bg-black/20 backdrop-blur-sm" phx-click="close_emoji"></div>
     
-    <div class="relative bg-gray-100/95 backdrop-blur-xl mb-1 border-t border-white/10 w-full max-h-[230px] overflow-hidden">
+    <div class="relative bg-gray-100/95 backdrop-blur-xl mb-0.5 border-t border-white/10 w-full max-h-[230px] overflow-hidden">
       <!-- Emoji Categories -->
       <div class="flex overflow-x-auto sticky top-0 bg-inherit border-b border-white/10">
         <%= for {category, _emojis} <- @emoji_categories do %>
           <button class={[
-            "px-3 py-3 text-sm whitespace-nowrap transition-colors",
+            "p-3 text-sm whitespace-nowrap transition-colors",
             if(@current_emoji_category == category, 
               do: "border-b-2 border-blue-400 text-blue-400", 
               else: "text-gray-400 hover:text-gray-300 hover:bg-white/5"
@@ -753,7 +753,7 @@ case @room.theme do
       <div class="p-2 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent" style="height: 180px;">
         <div class="grid grid-cols-8 sm:grid-cols-9 gap-1">
           <%= for emoji <- @emoji_categories[@current_emoji_category] do %>
-            <button class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-lg sm:text-xl hover:bg-white/10 rounded transition-colors"
+            <button class="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-lg sm:text-xl hover:bg-white/10 rounded transition-colors"
                     phx-click="select_emoji"
                     phx-value-emoji={emoji}>
               <%= emoji %>
