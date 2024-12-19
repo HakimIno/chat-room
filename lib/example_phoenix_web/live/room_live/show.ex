@@ -37,6 +37,32 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
     auto_upload: true
   ]
 
+  # เพิ่มฟังก์ชันสำหรับรายการ emoji แยกตามหมวดหมู่
+  defp get_emoji_categories do
+    %{
+      "😀 หน้ายิ้ม" => [
+        "😀", "😃", "😄", "😁", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍",
+        "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎"
+      ],
+      "❤️ หัวใจ" => [
+        "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓",
+        "💗", "💖", "💘", "💝", "💟"
+      ],
+      "🐱 สัตว์" => [
+        "🐱", "🐶", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸",
+        "🐵", "🐔", "🐧", "🐦", "🐤", "🦆", "🦅", "🦉", "🦇", "🐺"
+      ],
+      "🍎 อาหาร" => [
+        "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥",
+        "🥝", "🍅", "🍆", "🥑", "🥦", "🥬", "🥒", "🌶️", "🌽", "🥕"
+      ],
+      "⚽ กีฬา" => [
+        "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒",
+        "🏑", "🥍", "🏏", "⛳", "🪁", "🎣"
+      ]
+    }
+  end
+
   @impl true
   def mount(%{"id" => id}, session, socket) do
     if connected?(socket) do
@@ -78,6 +104,9 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
          |> assign(:uploading, false)
          |> assign(:current_message, "")
          |> assign(:message_ids, MapSet.new())
+         |> assign(:emojis, get_emoji_list())
+         |> assign(:emoji_categories, get_emoji_categories())
+         |> assign(:current_emoji_category, "😀 หน้ายิ้ม")
          |> allow_upload(:media, @upload_options)
          |> stream(:messages, [])}
     end
@@ -221,7 +250,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   def handle_event("logout", _params, socket) do
     {:noreply,
      socket
-     |> put_flash(:info, "ออกจากห้องสนท��า")
+     |> put_flash(:info, "ออกจากห้องสนทา")
      |> redirect(to: ~p"/auth")}
   end
 
@@ -683,7 +712,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
 
   defp extract_youtube_id(url) do
     patterns = [
-      ~r/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+      ~r/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
       ~r/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
       ~r/youtube\.com\/v\/([a-zA-Z0-9_-]+)/
     ]
@@ -698,7 +727,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
 
   @impl true
   def handle_event("open_emoji", _params, socket) do
-    {:noreply, assign(socket, :show_emoji_modal, true)}
+    {:noreply, assign(socket, :show_emoji_modal, !socket.assigns.show_emoji_modal)}
   end
 
   @impl true
@@ -709,10 +738,16 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   @impl true
   def handle_event("select_emoji", %{"emoji" => emoji}, socket) do
     current_message = socket.assigns.current_message || ""
+    new_message = current_message <> emoji
 
     {:noreply,
      socket
-     |> assign(:current_message, current_message <> emoji)}
+     |> assign(:current_message, new_message)}
+  end
+
+  @impl true
+  def handle_event("change_emoji_category", %{"category" => category}, socket) do
+    {:noreply, assign(socket, :current_emoji_category, category)}
   end
 
   @impl true
@@ -1253,7 +1288,7 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
     end
   end
 
-  # ปรับปร��งฟังก์ชัน handle_uploaded_file
+  # ปรับปรุงฟังก์ชัน handle_uploaded_file
   defp handle_uploaded_file(path, entry) do
     Logger.info("Handling file upload: #{entry.client_name}")
 
@@ -1737,5 +1772,28 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   @impl true
   def handle_info(:hide_loading, socket) do
     {:noreply, assign(socket, :loading_auth, false)}
+  end
+
+  # เพิ่มฟังก์ชันสำหรับรายการ emoji
+  defp get_emoji_list do
+    [
+      "😀", "😃", "😄", "😁", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍",
+      "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎",
+      "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩",
+      "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰",
+      "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦",
+      "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷",
+      "🤒", "🤕", "🤑", "🤠", "😈", "👿", "👹", "👺", "🤡", "💩", "👻", "💀", "☠️", "👽",
+      "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "❤️", "🧡",
+      "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗", "💖",
+      "💘", "💝", "💟", "☮️", "✝️", "☪️", "🕉️", "☸️", "✡️", "🔯", "🕎", "☯️", "☦️", "🛐",
+      "⛎", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓", "🆔", "⚛️"
+    ]
+  end
+
+  # เพิ่ม handle_event สำหรับเปลี่ยนหมวดหมู่ emoji
+  @impl true
+  def handle_event("change_emoji_category", %{"category" => category}, socket) do
+    {:noreply, assign(socket, :current_emoji_category, category)}
   end
 end

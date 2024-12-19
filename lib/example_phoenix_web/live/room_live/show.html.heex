@@ -524,7 +524,7 @@ case @room.theme do
                   <%= message.content %>
                 </div>
             <% end %>
-            <!-- เวลาและชื่อผู้สง -->
+            <!-- ��วลาและชื่อผู้สง -->
             <div class={[
               "text-xs text-gray-500",
               if(message.user_name == @current_user, do: "text-right", else: "text-left")
@@ -724,50 +724,45 @@ case @room.theme do
     </div>
   <% end %>
   <!-- Emoji Modal -->
-  <%= if @show_emoji_modal do %>
-    <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-50" phx-click="close_emoji">
-      <div
-        class="absolute bottom-0 left-0 right-0 bg-white/90  p-4 animate-slide-up"
-        phx-click-away="close_emoji"
-      >
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold text-gray-900">เลอกอิโมจิ</h3>
-          <button
-            type="button"
-            phx-click="close_emoji"
-            class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-          >
-            <svg
-              class="h-4 w-4 sm:h-5 sm:w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+  <div class={[
+    "fixed left-0 right-0 bottom-0 transition-all duration-300 z-50",
+    if(@show_emoji_modal, 
+      do: "opacity-100 translate-y-0", 
+      else: "opacity-0 pointer-events-none translate-y-full"
+    )
+  ]}>
+    <div class="absolute inset-0 -top-screen bg-black/20 backdrop-blur-sm" phx-click="close_emoji"></div>
+    
+    <div class="relative bg-gray-100/95 backdrop-blur-xl mb-1 border-t border-white/10 w-full max-h-[230px] overflow-hidden">
+      <!-- Emoji Categories -->
+      <div class="flex overflow-x-auto sticky top-0 bg-inherit border-b border-white/10">
+        <%= for {category, _emojis} <- @emoji_categories do %>
+          <button class={[
+            "px-3 py-3 text-sm whitespace-nowrap transition-colors",
+            if(@current_emoji_category == category, 
+              do: "border-b-2 border-blue-400 text-blue-400", 
+              else: "text-gray-400 hover:text-gray-300 hover:bg-white/5"
+            )
+          ]} phx-click="change_emoji_category" phx-value-category={category}>
+            <%= String.split(category, " ") |> List.first() %>
           </button>
-        </div>
-        <div class="grid grid-cols-5 sm:grid-cols-4 gap-3 sm:gap-4">
-          <%= for {_name, emoji} <- @emojis do %>
-            <button
-              type="button"
-              phx-click="select_emoji"
-              phx-value-emoji={emoji}
-              class="text-xl sm:text-2xl hover:bg-gray-100 p-2 sm:p-3 rounded-xl transition-all hover:scale-110"
-            >
+        <% end %>
+      </div>
+
+      <!-- Emoji Grid -->
+      <div class="p-2 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent" style="height: 180px;">
+        <div class="grid grid-cols-8 sm:grid-cols-9 gap-1">
+          <%= for emoji <- @emoji_categories[@current_emoji_category] do %>
+            <button class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-lg sm:text-xl hover:bg-white/10 rounded transition-colors"
+                    phx-click="select_emoji"
+                    phx-value-emoji={emoji}>
               <%= emoji %>
             </button>
           <% end %>
         </div>
       </div>
     </div>
-  <% end %>
+  </div>
   <!-- Upload Modal -->
   <%= if @uploading do %>
     <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 mb-20">
