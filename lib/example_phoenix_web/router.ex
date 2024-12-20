@@ -33,6 +33,7 @@ defmodule ExamplePhoenixWeb.Router do
     plug :put_root_layout, html: {ExamplePhoenixWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers, @security_headers
+
     plug Plug.Static,
       at: "/",
       from: :example_phoenix,

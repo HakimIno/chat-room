@@ -1,39 +1,36 @@
-<div 
-  id="room-auth"
-  data-room-id={@room_id}
-  phx-hook="RoomAuth"
-  class="hidden"
->
-</div>
+<div id="room-auth" data-room-id={@room_id} phx-hook="RoomAuth" class="hidden"></div>
 
-<%# Loading Screen %>
 <div class={[
   "fixed inset-0 z-50 backdrop-blur-sm transition-all duration-500 flex items-center justify-center w-full h-full bg-white/20",
   if(@loading_auth, do: "opacity-100", else: "opacity-0 pointer-events-none")
 ]}>
-      <!-- Cute Robot Animation Container -->
-     <div class="flex items-center justify-center w-full mr-14 mb-6">
-        <div class="relative w-20 h-20 flex flex-col items-center gap-4">
-          <!-- Robot Head -->
-          <div class="absolute w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl left-1/2 -translate-x-1/2 top-0 shadow-lg animate-float">
-            <!-- Eyes -->
-            <div class="absolute top-3.5 left-2.5 w-2.5 h-2.5 bg-white rounded-full"></div>
-            <div class="absolute top-3.5 right-2.5 w-2.5 h-2.5 bg-white rounded-full"></div>
-            <!-- Antenna -->
-            <div class="absolute -top-2.5 left-1/2 w-1.5 h-3 bg-indigo-300 origin-bottom animate-wiggle">
-              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-indigo-400 rounded-full animate-pulse"></div>
-            </div>
-            <!-- Smile -->
-            <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-white rounded-full"></div>
+  <!-- Cute Robot Animation Container -->
+  <div class="flex items-center justify-center w-full mr-14 mb-6">
+    <div class="relative w-20 h-20 flex flex-col items-center gap-4">
+      <!-- Robot Head -->
+      <div class="absolute w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl left-1/2 -translate-x-1/2 top-0 shadow-lg animate-float">
+        <!-- Eyes -->
+        <div class="absolute top-3.5 left-2.5 w-2.5 h-2.5 bg-white rounded-full"></div>
+        <div class="absolute top-3.5 right-2.5 w-2.5 h-2.5 bg-white rounded-full"></div>
+        <!-- Antenna -->
+        <div class="absolute -top-2.5 left-1/2 w-1.5 h-3 bg-indigo-300 origin-bottom animate-wiggle">
+          <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-indigo-400 rounded-full animate-pulse">
           </div>
         </div>
+        <!-- Smile -->
+        <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-white rounded-full">
+        </div>
       </div>
+    </div>
+  </div>
 </div>
 
-<%# Password Modal %>
 <div class={[
   "fixed inset-0 z-50 transition-opacity duration-300",
-  if(@show_password_modal && !@loading_auth, do: "opacity-100", else: "opacity-0 pointer-events-none")
+  if(@show_password_modal && !@loading_auth,
+    do: "opacity-100",
+    else: "opacity-0 pointer-events-none"
+  )
 ]}>
   <div class="absolute inset-0 bg-black/20 backdrop-blur-sm"></div>
   <div class={[
@@ -42,9 +39,7 @@
     if(@show_password_modal, do: "scale-100", else: "scale-95")
   ]}>
     <div class="relative bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 mx-4">
-     
       
-      <%# Modal Header %>
       <div class="p-6 pb-0">
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-3">
@@ -64,19 +59,23 @@
               <%= @room.name %>
             </h3>
           </div>
-          <button 
+          <button
             phx-click="redirect_to_rooms"
             class="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
         <p class="text-gray-500 mb-6">กรุณาใส่รหัสผ่านเพื่อเข้าสู่ห้องแชท</p>
       </div>
 
-      <%# Modal Body %>
       <div class="px-6 pb-6">
         <form phx-submit="verify_password" class="space-y-6">
           <div class="relative">
@@ -92,22 +91,24 @@
             />
             <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
               </svg>
             </div>
           </div>
 
-           <%# Flash Message %>
-      <%= if flash = live_flash(@flash, :error) do %>
+          <%= if flash = live_flash(@flash, :error) do %>
             <div class="ml-3 mb-2">
               <p class="text-sm text-red-700">
                 <%= flash %>
               </p>
             </div>
-      <% end %>
+          <% end %>
 
-          <%# Buttons %>
           <div class="flex items-center gap-3">
             <button
               type="button"
@@ -134,12 +135,14 @@
   </div>
 </div>
 
-<div class={["relative h-[var(--app-height)] flex flex-col", 
-case @room.theme do
+<div class={[
+  "relative h-[var(--app-height)] flex flex-col",
+  case @room.theme do
     "modern" -> "bg-gradient-to-br from-blue-100 to-indigo-100"
     "minimal" -> "bg-gradient-to-br from-gray-100 to-gray-100"
     "nature" -> "bg-gradient-to-br from-green-100 to-emerald-100"
-  end]}>
+  end
+]}>
   <!-- Decorative SVG Background -->
   <.background room={@room} />
   <!-- Header -->
@@ -556,9 +559,6 @@ case @room.theme do
       </div>
     </div>
   </div>
-
-  
-
   <!-- Input -->
   <%= if @authenticated do %>
     <div class={[
@@ -570,24 +570,24 @@ case @room.theme do
       end
     ]}>
       <div class="w-full max-w-4xl mx-auto">
-        <%# Regular Flash Message %>
+        
         <%= if flash = live_flash(@flash, :error) do %>
           <div class="mb-3 mx-2">
             <div class="p-3 bg-red-50 border-l-4 border-red-400 rounded-lg">
               <div class="flex items-center gap-3">
                 <div class="flex-shrink-0">
-                  <%# Sad Robot SVG %>
+                  
                   <div class="relative w-12 h-12">
-                    <%# Robot Head %>
+                    
                     <div class="absolute w-12 h-12 bg-gradient-to-br from-red-400 to-red-500 rounded-xl shadow-lg">
-                      <%# Sad Eyes %>
+                      
                       <div class="absolute top-3 left-2 w-2 h-2 bg-white rounded-full"></div>
                       <div class="absolute top-3 right-2 w-2 h-2 bg-white rounded-full"></div>
-                      <%# Sad Mouth %>
-                      <div class="absolute bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 border-b-2 border-white rounded-b-full"></div>
-                      <%# Broken Antenna %>
+                      <div class="absolute bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 border-b-2 border-white rounded-b-full">
+                      </div>
                       <div class="absolute -top-2 left-1/2 w-1 h-2 bg-red-300 origin-bottom -rotate-12 animate-wiggle">
-                        <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-400 rounded-full"></div>
+                        <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-400 rounded-full">
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -766,13 +766,14 @@ case @room.theme do
       </div>
     </div>
   <% else %>
-    <%# Blurred Input Container when not authenticated %>
+    
     <div class="fixed bottom-0 left-0 right-0 backdrop-blur-lg bg-white/50 p-3 sm:p-1 z-[60] pointer-events-none">
       <div class="w-full max-w-4xl mx-auto">
         <div class="flex items-center gap-2 sm:gap-3">
           <div class="flex-none w-9 h-9 sm:w-10 sm:h-10"></div>
           <div class="flex-1 relative">
-            <div class="w-full h-10 sm:h-12 rounded-full bg-gray-100/50 border border-gray-200/50"></div>
+            <div class="w-full h-10 sm:h-12 rounded-full bg-gray-100/50 border border-gray-200/50">
+            </div>
           </div>
         </div>
       </div>
@@ -781,36 +782,45 @@ case @room.theme do
   <!-- Emoji Modal -->
   <div class={[
     "fixed left-0 right-0 bottom-0 transition-all duration-300 z-50",
-    if(@show_emoji_modal, 
-      do: "opacity-100 translate-y-0", 
+    if(@show_emoji_modal,
+      do: "opacity-100 translate-y-0",
       else: "opacity-0 pointer-events-none translate-y-full"
     )
   ]}>
-    <div class="absolute inset-0 -top-screen bg-black/20 backdrop-blur-sm" phx-click="close_emoji"></div>
-    
+    <div class="absolute inset-0 -top-screen bg-black/20 backdrop-blur-sm" phx-click="close_emoji">
+    </div>
+
     <div class="relative bg-gray-100/95 backdrop-blur-xl mb-0.5 border-t border-white/10 w-full max-h-[230px] overflow-hidden">
       <!-- Emoji Categories -->
       <div class="flex overflow-x-auto sticky top-0 bg-inherit border-b border-white/10">
         <%= for {category, _emojis} <- @emoji_categories do %>
-          <button class={[
-            "p-3 text-sm whitespace-nowrap transition-colors",
-            if(@current_emoji_category == category, 
-              do: "border-b-2 border-blue-400 text-blue-400", 
-              else: "text-gray-400 hover:text-gray-300 hover:bg-white/5"
-            )
-          ]} phx-click="change_emoji_category" phx-value-category={category}>
+          <button
+            class={[
+              "p-3 text-sm whitespace-nowrap transition-colors",
+              if(@current_emoji_category == category,
+                do: "border-b-2 border-blue-400 text-blue-400",
+                else: "text-gray-400 hover:text-gray-300 hover:bg-white/5"
+              )
+            ]}
+            phx-click="change_emoji_category"
+            phx-value-category={category}
+          >
             <%= String.split(category, " ") |> List.first() %>
           </button>
         <% end %>
       </div>
-
       <!-- Emoji Grid -->
-      <div class="p-2 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent" style="height: 180px;">
+      <div
+        class="p-2 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+        style="height: 180px;"
+      >
         <div class="grid grid-cols-8 sm:grid-cols-9 gap-1">
           <%= for emoji <- @emoji_categories[@current_emoji_category] do %>
-            <button class="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-lg sm:text-xl hover:bg-white/10 rounded transition-colors"
-                    phx-click="select_emoji"
-                    phx-value-emoji={emoji}>
+            <button
+              class="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-lg sm:text-xl hover:bg-white/10 rounded transition-colors"
+              phx-click="select_emoji"
+              phx-value-emoji={emoji}
+            >
               <%= emoji %>
             </button>
           <% end %>
@@ -944,8 +954,7 @@ case @room.theme do
   <% end %>
   <!-- User Profile Modal -->
   <%= if @show_user_profile do %>
-    <div 
-    class="fixed inset-0 bg-black/60 backdrop-blur-md z-50">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-md z-50">
       <div class="fixed inset-0 z-20 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
           <div class="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md transform transition-all p-8 border border-white/20">
@@ -1086,29 +1095,27 @@ case @room.theme do
     </div>
   <% end %>
 
-   <%# Ban Notice with Backdrop %>
   <%= if @blocked do %>
-    <%# Full screen backdrop %>
-    <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[65]"></div>
     
-    <%# Notice content %>
+    <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[65]"></div>
+
     <div class="fixed inset-x-0 bottom-20 z-[70] px-4">
       <div class="w-full max-w-4xl mx-auto">
         <div class="p-4 bg-red-50/95 backdrop-blur-sm rounded-xl border border-red-100 shadow-lg">
           <div class="flex items-center gap-3">
             <div class="flex-shrink-0">
-              <%# Sad Robot SVG %>
+              
               <div class="relative w-12 h-12 animate-bounce-gentle">
-                <%# Robot Head %>
+                
                 <div class="absolute w-12 h-12 bg-gradient-to-br from-red-400 to-red-500 rounded-xl shadow-lg">
-                  <%# Sad Eyes %>
+                  
                   <div class="absolute top-3 left-2 w-2 h-2 bg-white rounded-full"></div>
                   <div class="absolute top-3 right-2 w-2 h-2 bg-white rounded-full"></div>
-                  <%# Sad Mouth %>
-                  <div class="absolute bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 border-b-2 border-white rounded-b-full"></div>
-                  <%# Broken Antenna %>
+                  <div class="absolute bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 border-b-2 border-white rounded-b-full">
+                  </div>
                   <div class="absolute -top-2 left-1/2 w-1 h-2 bg-red-300 origin-bottom -rotate-12 animate-wiggle">
-                    <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-400 rounded-full"></div>
+                    <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-400 rounded-full">
+                    </div>
                   </div>
                 </div>
               </div>

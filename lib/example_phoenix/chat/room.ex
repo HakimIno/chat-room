@@ -78,8 +78,10 @@ defmodule ExamplePhoenix.Chat.Room do
         add_error(changeset, :password, "ห้องส่วนตัวต้องมีรหัสผ่าน")
 
       is_private && !is_nil(password) ->
-        validate_length(changeset, :password, min: 4,
-          message: "รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร")
+        validate_length(changeset, :password,
+          min: 4,
+          message: "รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร"
+        )
 
       true ->
         changeset
