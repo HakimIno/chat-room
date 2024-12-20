@@ -8,25 +8,6 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
   require Logger
   import Phoenix.LiveView.Helpers
 
-  # Add emoji list as a module attribute
-  @emojis [
-    {"smile", "😊"},
-    {"laugh", "😄"},
-    {"heart", "❤️"},
-    {"thumbs_up", "👍"},
-    {"clap", "👏"},
-    {"fire", "🔥"},
-    {"party", "🎉"},
-    {"think", "🤔"},
-    {"cool", "😎"},
-    {"cry", "😢"},
-    {"angry", "😠"},
-    {"love", "😍"},
-    {"wink", "😉"},
-    {"pray", "🙏"},
-    {"star", "⭐"}
-  ]
-
   # เพิ่ม configuration สำหรับ upload
   @upload_options [
     accept: ~w(.jpg .jpeg .png .gif .webp .mp4 .mov .webm),
@@ -85,6 +66,10 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
 
         if connected?(socket), do: Process.send_after(self(), :hide_loading, 500)
 
+        # โหลดข้อความเก่าสำหรับทั้งห้องสาธารณะและห้องส่วนตัว
+        messages = if !is_private, do: Chat.list_messages(id), else: []
+        message_ids = messages |> Enum.map(& &1.id) |> MapSet.new()
+
         {:ok,
          socket
          |> assign(:room, room)
@@ -103,12 +88,12 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
          |> assign(:input_focused, false)
          |> assign(:uploading, false)
          |> assign(:current_message, "")
-         |> assign(:message_ids, MapSet.new())
+         |> assign(:message_ids, message_ids)
          |> assign(:emojis, get_emoji_list())
          |> assign(:emoji_categories, get_emoji_categories())
          |> assign(:current_emoji_category, "😀 หน้ายิ้ม")
          |> allow_upload(:media, @upload_options)
-         |> stream(:messages, [])}
+         |> stream(:messages, messages)} # เพิ่มข้อความเก่าเข้าไปใน stream ทันที
     end
   end
 
@@ -148,9 +133,11 @@ defmodule ExamplePhoenixWeb.RoomLive.Show do
          |> put_flash(:error, "คุณใส่รหัสผิดเกิน 3 ครั้ง กรุณารอ 5 นาทีแล้วลองใหม่อีกครั้ง")}
       else
         remaining_attempts = 3 - attempt_count
+
         {:noreply,
          socket
-         |> put_flash(:error, "รหัสผ่านไม่ถูกต้อง เหลือโอกาสอีก #{remaining_attempts} ครั้ง")}
+         |> put_flash(:error, "รหัสผ่านไม่ถูกต้อง เหลือโอกาสอีก #{remaining_attempts} ครั้ง")
+         |> assign(:show_password_modal, true)} # เพิ่มบรรทัดนี้เพื่อให้ modal ยังแสดงอยู่
       end
     end
   end

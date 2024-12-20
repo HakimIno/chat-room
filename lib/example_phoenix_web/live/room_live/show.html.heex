@@ -8,7 +8,7 @@
 
 <%# Loading Screen %>
 <div class={[
-  "fixed inset-0 z-50 backdrop-blur-sm transition-all duration-500 flex items-center justify-center w-full h-full bg-black/10",
+  "fixed inset-0 z-50 backdrop-blur-sm transition-all duration-500 flex items-center justify-center w-full h-full bg-white/20",
   if(@loading_auth, do: "opacity-100", else: "opacity-0 pointer-events-none")
 ]}>
       <!-- Cute Robot Animation Container -->
@@ -42,6 +42,8 @@
     if(@show_password_modal, do: "scale-100", else: "scale-95")
   ]}>
     <div class="relative bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 mx-4">
+     
+      
       <%# Modal Header %>
       <div class="p-6 pb-0">
         <div class="flex items-center justify-between mb-2">
@@ -95,6 +97,15 @@
               </svg>
             </div>
           </div>
+
+           <%# Flash Message %>
+      <%= if flash = live_flash(@flash, :error) do %>
+            <div class="ml-3 mb-2">
+              <p class="text-sm text-red-700">
+                <%= flash %>
+              </p>
+            </div>
+      <% end %>
 
           <%# Buttons %>
           <div class="flex items-center gap-3">
@@ -545,6 +556,9 @@ case @room.theme do
       </div>
     </div>
   </div>
+
+  
+
   <!-- Input -->
   <%= if @authenticated do %>
     <div class={[
@@ -556,6 +570,39 @@ case @room.theme do
       end
     ]}>
       <div class="w-full max-w-4xl mx-auto">
+        <%# Regular Flash Message %>
+        <%= if flash = live_flash(@flash, :error) do %>
+          <div class="mb-3 mx-2">
+            <div class="p-3 bg-red-50 border-l-4 border-red-400 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="flex-shrink-0">
+                  <%# Sad Robot SVG %>
+                  <div class="relative w-12 h-12">
+                    <%# Robot Head %>
+                    <div class="absolute w-12 h-12 bg-gradient-to-br from-red-400 to-red-500 rounded-xl shadow-lg">
+                      <%# Sad Eyes %>
+                      <div class="absolute top-3 left-2 w-2 h-2 bg-white rounded-full"></div>
+                      <div class="absolute top-3 right-2 w-2 h-2 bg-white rounded-full"></div>
+                      <%# Sad Mouth %>
+                      <div class="absolute bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 border-b-2 border-white rounded-b-full"></div>
+                      <%# Broken Antenna %>
+                      <div class="absolute -top-2 left-1/2 w-1 h-2 bg-red-300 origin-bottom -rotate-12 animate-wiggle">
+                        <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-400 rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-base font-medium text-red-800">คุณถูกระงับการแชทชั่วคราว</h3>
+                  <p class="mt-1 text-sm text-red-700">
+                    กรุณารอ <%= format_block_time(@block_remaining_seconds) %> เพื่อกลับมาแชทอีกครั้ง
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
         <.form
           for={%{}}
           phx-submit="submit_message"
@@ -1032,6 +1079,45 @@ case @room.theme do
                 </svg>
                 <span>เพิ่มเป็นเพื่อน</span>
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+   <%# Ban Notice with Backdrop %>
+  <%= if @blocked do %>
+    <%# Full screen backdrop %>
+    <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[65]"></div>
+    
+    <%# Notice content %>
+    <div class="fixed inset-x-0 bottom-20 z-[70] px-4">
+      <div class="w-full max-w-4xl mx-auto">
+        <div class="p-4 bg-red-50/95 backdrop-blur-sm rounded-xl border border-red-100 shadow-lg">
+          <div class="flex items-center gap-3">
+            <div class="flex-shrink-0">
+              <%# Sad Robot SVG %>
+              <div class="relative w-12 h-12 animate-bounce-gentle">
+                <%# Robot Head %>
+                <div class="absolute w-12 h-12 bg-gradient-to-br from-red-400 to-red-500 rounded-xl shadow-lg">
+                  <%# Sad Eyes %>
+                  <div class="absolute top-3 left-2 w-2 h-2 bg-white rounded-full"></div>
+                  <div class="absolute top-3 right-2 w-2 h-2 bg-white rounded-full"></div>
+                  <%# Sad Mouth %>
+                  <div class="absolute bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 border-b-2 border-white rounded-b-full"></div>
+                  <%# Broken Antenna %>
+                  <div class="absolute -top-2 left-1/2 w-1 h-2 bg-red-300 origin-bottom -rotate-12 animate-wiggle">
+                    <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-400 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-base font-medium text-red-800">คุณถูกระงับการแชทชั่วคราว</h3>
+              <p class="mt-1 text-sm text-red-700">
+                กรุณารอ <%= format_block_time(@block_remaining_seconds) %> เพื่อกลับมาแชทอีกครั้ง
+              </p>
             </div>
           </div>
         </div>
