@@ -122,7 +122,7 @@ config :example_phoenix, :cache,
 # Link Preview Configuration
 config :example_phoenix, :link_preview,
   # 10MB
-  max_file_size: 10_000_000,
+  max_file_size: 20_000_000,
   # 5 seconds
   timeout: 5_000,
   allowed_domains: [
